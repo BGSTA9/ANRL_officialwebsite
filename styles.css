@@ -236,9 +236,48 @@ textarea {
   font-size: var(--text-sm);
   letter-spacing: 0.02em;
   color: var(--white);
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.nav__logo-text span {
+/* Telescoping logo parts */
+.logo-word {
+  display: inline-flex;
+}
+
+.logo-keep {
+  display: inline-block;
+}
+
+.logo-hide {
+  display: inline-block;
+  max-width: 200px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-space {
+  display: inline-block;
+  width: 0.3em;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed state when scrolled */
+.nav.scrolled .logo-hide {
+  max-width: 0;
+  opacity: 0;
+}
+
+.nav.scrolled .logo-space {
+  width: 0;
+}
+
+/* Accent color on the last kept letters */
+.logo-word:last-child .logo-keep {
   color: var(--accent);
 }
 
@@ -879,7 +918,7 @@ textarea {
   align-items: center;
 }
 
-.footer__left {}
+
 
 .footer__name {
   font-family: var(--font-display);

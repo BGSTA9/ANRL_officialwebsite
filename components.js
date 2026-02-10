@@ -4,26 +4,26 @@
    ============================================================ */
 
 function renderNav(activePage) {
-    const pages = [
-        { id: 'home', label: 'home', href: 'index.html' },
-        { id: 'research', label: 'research', href: 'research.html' },
-        { id: 'story', label: 'our story', href: 'story.html' },
-        { id: 'team', label: 'team', href: 'team.html' },
-        { id: 'join', label: 'join us', href: 'join.html' },
-    ];
+  const pages = [
+    { id: 'home', label: 'home', href: 'index.html' },
+    { id: 'research', label: 'research', href: 'research.html' },
+    { id: 'story', label: 'our story', href: 'story.html' },
+    { id: 'team', label: 'team', href: 'team.html' },
+    { id: 'join', label: 'join us', href: 'join.html' },
+  ];
 
-    const links = pages
-        .map(p => `<a href="${p.href}" class="nav__link${p.id === activePage ? ' active' : ''}">${p.label}</a>`)
-        .join('\n          ');
+  const links = pages
+    .map(p => `<a href="${p.href}" class="nav__link${p.id === activePage ? ' active' : ''}">${p.label}</a>`)
+    .join('\n          ');
 
-    const nav = document.createElement('nav');
-    nav.className = 'nav';
-    nav.id = 'nav';
-    nav.innerHTML = `
+  const nav = document.createElement('nav');
+  nav.className = 'nav';
+  nav.id = 'nav';
+  nav.innerHTML = `
     <div class="nav__inner">
       <a href="index.html" class="nav__logo">
         <img src="ANReLa.svg" alt="ANReLa" />
-        <span class="nav__logo-text">ANReL<span>a</span></span>
+        <span class="nav__logo-text"><span class="logo-word"><span class="logo-keep">A</span><span class="logo-hide">rgo</span></span><span class="logo-space"> </span><span class="logo-word"><span class="logo-keep">N</span><span class="logo-hide">avis</span></span><span class="logo-space"> </span><span class="logo-word"><span class="logo-keep">Re</span><span class="logo-hide">search</span></span><span class="logo-space"> </span><span class="logo-word"><span class="logo-keep">La</span><span class="logo-hide">boratory</span></span></span>
       </a>
       <div class="nav__links" id="navLinks">
         ${links}
@@ -36,42 +36,42 @@ function renderNav(activePage) {
     </div>
   `;
 
-    document.body.prepend(nav);
+  document.body.prepend(nav);
 
-    // Mobile menu toggle
-    const toggle = document.getElementById('navToggle');
-    const navLinks = document.getElementById('navLinks');
+  // Mobile menu toggle
+  const toggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
 
-    toggle.addEventListener('click', () => {
-        toggle.classList.toggle('open');
-        navLinks.classList.toggle('open');
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('open');
+    navLinks.classList.toggle('open');
+  });
+
+  // Close menu on link click
+  navLinks.querySelectorAll('.nav__link').forEach(link => {
+    link.addEventListener('click', () => {
+      toggle.classList.remove('open');
+      navLinks.classList.remove('open');
     });
+  });
 
-    // Close menu on link click
-    navLinks.querySelectorAll('.nav__link').forEach(link => {
-        link.addEventListener('click', () => {
-            toggle.classList.remove('open');
-            navLinks.classList.remove('open');
-        });
-    });
-
-    // Scroll effect
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(() => {
-                nav.classList.toggle('scrolled', window.scrollY > 40);
-                ticking = false;
-            });
-            ticking = true;
-        }
-    });
+  // Scroll effect
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        nav.classList.toggle('scrolled', window.scrollY > 40);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
 }
 
 function renderFooter() {
-    const footer = document.createElement('footer');
-    footer.className = 'footer';
-    footer.innerHTML = `
+  const footer = document.createElement('footer');
+  footer.className = 'footer';
+  footer.innerHTML = `
     <div class="container">
       <div class="footer__inner">
         <div class="footer__left">
@@ -100,5 +100,5 @@ function renderFooter() {
     </div>
   `;
 
-    document.body.appendChild(footer);
+  document.body.appendChild(footer);
 }
