@@ -13,32 +13,39 @@
 
 <body>
 
-  <!-- Hero -->
-  <section class="hero">
-    <canvas class="hero__canvas" id="heroCanvas"></canvas>
-    <div class="hero__content">
-      <h1 class="hero__title fade-up">Argo Navis<br />Research Laboratory</h1>
-      <p class="hero__subtitle fade-up fade-up-delay-2">Computational number theory through simulation and deep
-        learning.</p>
-    </div>
-    <div class="hero__scroll fade-in" style="animation-delay: 1.2s">
-      <svg viewBox="0 0 24 24">
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
-    </div>
-  </section>
+  <!-- Scroll-driven homepage experience -->
+  <div class="scroll-drive" id="scrollDrive">
 
-  <!-- Intro -->
-  <section class="intro">
-    <div class="container container--narrow">
-      <p class="intro__text fade-up">
-        We view the set of integers not as a static logical structure, but as a vast, high-dimensional dataset waiting
-        to be deciphered. By deploying deep neural networks as observational instruments, we detect subtle correlations
-        in arithmetic distributions that remain invisible to classical analytical methods.
-      </p>
-      <a href="research.html" class="link-arrow fade-up fade-up-delay-1">Explore our research</a>
-    </div>
-  </section>
+    <!-- Pinned viewport -->
+    <section class="hero" id="hero">
+      <canvas class="hero__canvas" id="heroCanvas"></canvas>
+
+      <!-- Phase 1: Logo + Full Name (visible at top) -->
+      <div class="hero__phase hero__phase--logo" id="phaselogo">
+        <img src="ANReLa.svg" class="hero__emblem" id="heroEmblem" alt="ANReLa" />
+        <span class="hero__brand">Argo Navis Research Laboratory</span>
+      </div>
+
+      <!-- Phase 3: Title reveal (fades in after neural network) -->
+      <div class="hero__phase hero__phase--title" id="phasetitle">
+        <h1 class="hero__title-main">Argo Navis</h1>
+        <p class="hero__title-sub">Research Laboratory</p>
+      </div>
+
+      <!-- Final: CTA link -->
+      <a href="research.html" class="hero__cta" id="heroCta">
+        Explore our research<span class="hero__cta-arrow">→</span>
+      </a>
+
+      <!-- Scroll indicator (phase 1 only) -->
+      <div class="hero__scroll" id="heroScroll">
+        <svg viewBox="0 0 24 24">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+    </section>
+
+  </div>
 
   <script src="components.js"></script>
   <script src="main.js"></script>
