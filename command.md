@@ -33,6 +33,8 @@ Please fill out the sections below with as much detail as you'd like. Feel free 
     - dismiss, this is for later updates ...
 - What pivotal moments shaped your research direction?
     - dismiss, this is for later updates ...
+- typography
+    -  JetBrains Mono (for small texts) + Inter (for large texts) 
 
 ### Current Position
 - Your current title/role:
@@ -80,9 +82,12 @@ Please fill out the sections below with as much detail as you'd like. Feel free 
 
 ### Lab Culture
 - How would you describe your lab's culture?
-    - 
-- What values are important to your team?
     - dismiss, this is for later updates ...
+- What values are important to your team?
+    - **Compute Over Conjecture**: We do not wait for inspiration; we generate it. Before we attempt to prove a theorem, we simulate it. We believe that high-fidelity data provides the "ground truth" necessary to guide intuition. If the simulation doesn't support the hypothesis, we discard the hypothesis, not the data.
+    - **Output Over Credentials**: We care about what you can build, not where you studied. A working GitHub repository or a novel simulation holds more weight here than a transcript. We judge ideas by their predictive power and mathematical validity, never by the rank or title of the person proposing them.
+    - **Radical Transparency (Open Science)**: Knowledge grows when it is shared, not siloed. We "build in public." Our datasets, simulation engines, and pre-print drafts are open-source by default. We believe the future of science is decentralized and collaborative, not hidden behind paywalls.
+    - **The "Deciphering" Spirit**: Reality is a puzzle, not a black box. We are driven by an obsessive curiosity to find the signal in the noise. We are not satisfied with "it works"; we need to know why it works. We interrogate our AI models to understand the geometric logic they have learned.
 
 ---
 
@@ -90,14 +95,19 @@ Please fill out the sections below with as much detail as you'd like. Feel free 
 
 ### Publications
 - How many publications do you want to feature?
+    - dismiss, this is for later updates ...
 - Should they be categorized (by year, topic, type)?
+    - dismiss, this is for later updates ...
 
 ### Awards & Grants
 - Any notable awards or recognitions?
+    - dismiss, this is for later updates ...
 - Funding sources you'd like to acknowledge?
+    - dismiss, this is for later updates ...
 
 ### Media & Press
 - Any media coverage or press mentions?
+    - dismiss, this is for later updates ...
 
 ---
 
@@ -105,15 +115,21 @@ Please fill out the sections below with as much detail as you'd like. Feel free 
 
 ### Collaboration Interests
 - Are you looking for collaborators?
+    - dismiss, this is for later updates ...
 - What kind of partnerships interest you?
+    - dismiss, this is for later updates ...
 
 ### Recruiting
 - Are you recruiting? (PhD students, postdocs, etc.)
+    - dismiss, this is for later updates ...
 - What qualities do you look for in team members?
+    - dismiss, this is for later updates ...
 
 ### Community Engagement
 - Any teaching, outreach, or public engagement activities?
+    - dismiss, this is for later updates ...
 - Blog or regular updates?
+    - dismiss, this is for later updates ...
 
 ---
 
@@ -121,14 +137,21 @@ Please fill out the sections below with as much detail as you'd like. Feel free 
 
 ### Color Preferences
 - Any specific colors that represent your lab or research?
+    - black, in background
+    - white, in text
 - Should it align with institutional branding?
+    - No.
 
 ### Imagery
 - What kind of images represent your work? (lab photos, diagrams, abstract visuals)
+    - No, photos. 
+    - mathematical diagrams maybe.
 - Do you have existing photos/graphics or need suggestions?
+    - No.
 
 ### Tone
 - How should the website feel? (professional, approachable, cutting-edge, traditional, etc.)
+    - An immersive, high-signal digital observatory that feels like a minimalist interface for deciphering the arithmetic architecture of nature (reality).
 
 ---
 
@@ -137,31 +160,35 @@ Please fill out the sections below with as much detail as you'd like. Feel free 
 ### Essential Pages
 Which of these pages do you want?
 - [ ] Home
-- [ ] About/Lab Story
 - [ ] Research
-- [ ] Team/People
-- [ ] Publications
-- [ ] News/Updates
-- [ ] Join Us/Recruiting
-- [ ] Contact
-- [ ] Other: ___________
+    - [ ] Papers
+    - [ ] Projects
+- [ ] Members
+- [ ] Contact <- "join us" would be here.
+- [ ] Our Story
 
 ### Special Features
 - Do you want a blog or news section?
+    - dismiss, this is for later updates ...
 - Interactive elements (timelines, project showcases, data visualizations)?
+    - dismiss, this is for later updates ...
 - Integration with external platforms (Google Scholar, ResearchGate, Twitter/X)?
-
+    - GitHub, Huggingface, linkedin, instagram.
 ---
 
 ## 9. Technical Considerations
 
 ### Domain
-- Confirmed domain: `.lab` + ?
-- Any other domains you own?
+- Confirmed domain: `.org` + ?
+    - Not yet bought the domain, but it is going to be: 'argonavis-research.org'
+- Any other domains you own? ANReLa
+    - no
 
 ### Hosting/Platform Preferences
 - Do you have hosting arranged?
+    - no
 - Any platform preferences (static site, WordPress, custom build)?
+    - no
 
 ---
 
@@ -169,10 +196,14 @@ Which of these pages do you want?
 
 ### Websites You Like
 - Any research lab websites you admire?
+    - anthropic
+    - antigravity
+    - Q.ai
+    - 
 - What do you like about them?
-
+    - the simplicity
 ### Websites You Don't Like
-- Any examples of what to avoid?
+- anything so messy and complicated
 
 ---
 
@@ -180,4 +211,6 @@ Which of these pages do you want?
 
 ### Anything Else?
 - Any other information, stories, or details you'd like to share?
+    - no
 - Specific requirements or constraints I should know about?
+    - no
