@@ -228,6 +228,7 @@ textarea {
 .nav__logo img {
   height: 28px;
   width: auto;
+  filter: brightness(0) invert(1);
 }
 
 .nav__logo-text {
@@ -276,10 +277,7 @@ textarea {
   width: 0;
 }
 
-/* Accent color on the last kept letters */
-.logo-word:last-child .logo-keep {
-  color: var(--accent);
-}
+
 
 .nav__links {
   display: flex;
@@ -373,19 +371,32 @@ textarea {
   overflow: hidden;
 }
 
+/* Radial vignette — fades edges to black */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center,
+      transparent 30%,
+      rgba(0, 0, 0, 0.6) 70%,
+      rgba(0, 0, 0, 0.95) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .hero__canvas {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.08;
+  opacity: 0.5;
   pointer-events: none;
 }
 
 .hero__content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 900px;
 }
 
