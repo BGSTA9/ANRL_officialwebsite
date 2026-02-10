@@ -1,13 +1,14 @@
 /* ============================================================
    ANReLa — Main JavaScript
-   Handles page-specific interactivity
+   Scroll-driven homepage + page-specific interactivity
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // -- Neural Network Canvas (homepage only) --
+    // -- Scroll-driven homepage --
+    const scrollDrive = document.getElementById('scrollDrive');
     const canvas = document.getElementById('heroCanvas');
-    if (canvas) {
-        initNeuralNetwork(canvas);
+    if (scrollDrive && canvas) {
+        initScrollExperience(scrollDrive, canvas);
     }
 
     // -- Contact Form (join page only) --
@@ -18,61 +19,72 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
-   NEURAL NETWORK VISUALIZATION
-   Procedural neuron network with firing pulses
+   SCROLL-DRIVEN HOMEPAGE EXPERIENCE
+   Phase 1: Logo + Name
+   Phase 2: Logo dismantles → neural network
+   Phase 3: Title + CTA reveal
    ============================================================ */
-function initNeuralNetwork(canvas) {
+function initScrollExperience(scrollDrive, canvas) {
     const ctx = canvas.getContext('2d');
     let w, h, dpr;
+
+    // DOM elements
+    const phaseLogo = document.getElementById('phaselogo');
+    const phaseTitle = document.getElementById('phasetitle');
+    const heroCta = document.getElementById('heroCta');
+    const heroScroll = document.getElementById('heroScroll');
+    const heroEmblem = document.getElementById('heroEmblem');
+
+    // ── Neural Network Data ──
+    const NODE_COUNT = 100;
+    const CONNECTION_DIST = 160;
     let nodes = [];
     let connections = [];
     let pulses = [];
-    let time = 0;
+    let logoParticles = []; // particles from dismantled logo
+    let frameCount = 0;
 
-    const NODE_COUNT = 120;
-    const CONNECTION_DIST = 180;
-    const PULSE_SPEED = 1.5;
-    const FIRE_INTERVAL = 60; // frames between random fires
+    // ── Logo center positions (calculated on resize) ──
+    let logoCenterX, logoCenterY;
 
-    class Node {
+    // ── Particle class for logo dismantle ──
+    class Particle {
         constructor(x, y) {
+            this.originX = x;
+            this.originY = y;
+            // Random target position for neural network spread
+            this.targetX = Math.random() * w;
+            this.targetY = Math.random() * h;
             this.x = x;
             this.y = y;
-            this.baseRadius = 1.5 + Math.random() * 2;
+            this.radius = 1 + Math.random() * 2;
+            this.pulsePhase = Math.random() * Math.PI * 2;
             this.glow = 0;
             this.glowDecay = 0.02 + Math.random() * 0.02;
-            this.pulsePhase = Math.random() * Math.PI * 2;
-            // Slight drift
-            this.vx = (Math.random() - 0.5) * 0.15;
-            this.vy = (Math.random() - 0.5) * 0.15;
         }
 
-        update() {
+        update(progress) {
+            // progress: 0 = logo form, 1 = fully scattered
+            const ease = easeInOutCubic(progress);
+            this.x = this.originX + (this.targetX - this.originX) * ease;
+            this.y = this.originY + (this.targetY - this.originY) * ease;
             this.glow = Math.max(0, this.glow - this.glowDecay);
-            // Gentle drift
-            this.x += this.vx;
-            this.y += this.vy;
-            // Wrap edges
-            if (this.x < -20) this.x = w + 20;
-            if (this.x > w + 20) this.x = -20;
-            if (this.y < -20) this.y = h + 20;
-            if (this.y > h + 20) this.y = -20;
         }
 
         fire() {
             this.glow = 1;
         }
 
-        draw(ctx, time) {
-            const breathe = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(time * 0.8 + this.pulsePhase));
-            const alpha = 0.15 + this.glow * 0.7 + breathe * 0.1;
-            const r = this.baseRadius + this.glow * 3;
+        draw(ctx, time, networkAlpha) {
+            const breathe = 0.5 + 0.5 * Math.sin(time * 0.8 + this.pulsePhase);
+            const alpha = (0.2 + this.glow * 0.6 + breathe * 0.15) * networkAlpha;
+            const r = this.radius + this.glow * 3;
 
             // Glow halo
-            if (this.glow > 0.1) {
+            if (this.glow > 0.1 && networkAlpha > 0.3) {
                 const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 4);
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.glow * 0.3})`);
-                gradient.addColorStop(0.5, `rgba(255, 255, 255, ${this.glow * 0.08})`);
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.glow * 0.3 * networkAlpha})`);
+                gradient.addColorStop(0.5, `rgba(255, 255, 255, ${this.glow * 0.08 * networkAlpha})`);
                 gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, r * 4, 0, Math.PI * 2);
@@ -88,83 +100,47 @@ function initNeuralNetwork(canvas) {
         }
     }
 
-    class Connection {
-        constructor(a, b) {
-            this.a = a;
-            this.b = b;
-        }
-
-        draw(ctx) {
-            const dx = this.b.x - this.a.x;
-            const dy = this.b.y - this.a.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const alpha = Math.max(0, 0.04 * (1 - dist / CONNECTION_DIST));
-
-            ctx.beginPath();
-            ctx.moveTo(this.a.x, this.a.y);
-
-            // Slight curve for organic feel
-            const mx = (this.a.x + this.b.x) / 2 + (dy * 0.05);
-            const my = (this.a.y + this.b.y) / 2 - (dx * 0.05);
-            ctx.quadraticCurveTo(mx, my, this.b.x, this.b.y);
-
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-        }
-    }
-
+    // ── Pulse class ──
     class Pulse {
-        constructor(connection, direction) {
-            this.connection = connection;
-            this.direction = direction; // 1 = a→b, -1 = b→a
+        constructor(fromNode, toNode) {
+            this.from = fromNode;
+            this.to = toNode;
             this.progress = 0;
-            this.speed = PULSE_SPEED + Math.random() * 0.8;
+            this.speed = 0.015 + Math.random() * 0.01;
             this.alive = true;
             this.trail = [];
         }
 
         update() {
-            const a = this.direction === 1 ? this.connection.a : this.connection.b;
-            const b = this.direction === 1 ? this.connection.b : this.connection.a;
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            this.progress += this.speed / dist;
-
+            this.progress += this.speed;
             if (this.progress >= 1) {
-                // Arrived — fire the target node
-                b.fire();
+                this.to.fire();
                 this.alive = false;
-
-                // Chain reaction: sometimes fire onward
-                if (Math.random() < 0.35) {
-                    spawnPulsesFrom(b);
+                // Chain reaction
+                if (Math.random() < 0.3) {
+                    spawnPulsesFrom(this.to);
                 }
+                return;
             }
 
-            // Current position
             const t = this.progress;
-            const mx = (a.x + b.x) / 2 + ((b.y - a.y) * 0.05);
-            const my = (a.y + b.y) / 2 - ((b.x - a.x) * 0.05);
-            const cx = (1 - t) * (1 - t) * a.x + 2 * (1 - t) * t * mx + t * t * b.x;
-            const cy = (1 - t) * (1 - t) * a.y + 2 * (1 - t) * t * my + t * t * b.y;
+            const mx = (this.from.x + this.to.x) / 2 + (this.to.y - this.from.y) * 0.06;
+            const my = (this.from.y + this.to.y) / 2 - (this.to.x - this.from.x) * 0.06;
+            const cx = (1 - t) * (1 - t) * this.from.x + 2 * (1 - t) * t * mx + t * t * this.to.x;
+            const cy = (1 - t) * (1 - t) * this.from.y + 2 * (1 - t) * t * my + t * t * this.to.y;
 
-            this.trail.push({ x: cx, y: cy, alpha: 1 });
-
-            // Limit trail length
-            if (this.trail.length > 12) this.trail.shift();
+            this.trail.push({ x: cx, y: cy });
+            if (this.trail.length > 10) this.trail.shift();
         }
 
-        draw(ctx) {
-            // Draw trail
+        draw(ctx, networkAlpha) {
+            if (networkAlpha < 0.1) return;
+            // Trail
             for (let i = 0; i < this.trail.length; i++) {
                 const pt = this.trail[i];
                 const fade = (i + 1) / this.trail.length;
-                const alpha = fade * 0.9;
+                const alpha = fade * 0.8 * networkAlpha;
                 const radius = 1 + fade * 1.5;
-
                 ctx.beginPath();
                 ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
@@ -175,8 +151,8 @@ function initNeuralNetwork(canvas) {
             if (this.trail.length > 0) {
                 const head = this.trail[this.trail.length - 1];
                 const gradient = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 8);
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-                gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.15)');
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${0.6 * networkAlpha})`);
+                gradient.addColorStop(0.4, `rgba(255, 255, 255, ${0.15 * networkAlpha})`);
                 gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
                 ctx.beginPath();
                 ctx.arc(head.x, head.y, 8, 0, Math.PI * 2);
@@ -187,96 +163,43 @@ function initNeuralNetwork(canvas) {
     }
 
     function spawnPulsesFrom(node) {
-        const nodeConnections = connections.filter(c => c.a === node || c.b === node);
-        if (nodeConnections.length === 0) return;
-
-        // Fire 1-2 random connections
-        const count = Math.min(nodeConnections.length, 1 + Math.floor(Math.random() * 2));
-        const shuffled = nodeConnections.sort(() => Math.random() - 0.5);
-
+        const nearby = logoParticles.filter(p => {
+            if (p === node) return false;
+            const dx = p.x - node.x;
+            const dy = p.y - node.y;
+            return Math.sqrt(dx * dx + dy * dy) < CONNECTION_DIST;
+        });
+        if (nearby.length === 0) return;
+        const count = Math.min(nearby.length, 1 + Math.floor(Math.random() * 2));
+        const shuffled = nearby.sort(() => Math.random() - 0.5);
         for (let i = 0; i < count; i++) {
-            const c = shuffled[i];
-            const dir = c.a === node ? 1 : -1;
-            pulses.push(new Pulse(c, dir));
+            pulses.push(new Pulse(node, shuffled[i]));
         }
     }
 
-    function init() {
-        nodes = [];
-        connections = [];
-        pulses = [];
+    // ── Easing ──
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
 
-        // Create nodes
+    // ── Initialize particles around logo center ──
+    function initParticles() {
+        logoParticles = [];
+        logoCenterX = w / 2;
+        logoCenterY = h / 2;
+
         for (let i = 0; i < NODE_COUNT; i++) {
-            const x = Math.random() * w;
-            const y = Math.random() * h;
-            nodes.push(new Node(x, y));
+            // Start particles clustered around logo center (within ~80px radius)
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 80;
+            const x = logoCenterX + Math.cos(angle) * radius;
+            const y = logoCenterY + Math.sin(angle) * radius;
+            logoParticles.push(new Particle(x, y));
         }
-
-        // Create connections between nearby nodes
-        buildConnections();
+        pulses = [];
     }
 
-    function buildConnections() {
-        connections = [];
-        for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const dx = nodes[i].x - nodes[j].x;
-                const dy = nodes[i].y - nodes[j].y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < CONNECTION_DIST) {
-                    connections.push(new Connection(nodes[i], nodes[j]));
-                }
-            }
-        }
-    }
-
-    let frameCount = 0;
-    function draw() {
-        time += 0.016;
-        frameCount++;
-        ctx.clearRect(0, 0, w, h);
-
-        // Periodically rebuild connections (nodes drift)
-        if (frameCount % 120 === 0) {
-            buildConnections();
-        }
-
-        // Random firing
-        if (frameCount % FIRE_INTERVAL === 0) {
-            const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
-            randomNode.fire();
-            spawnPulsesFrom(randomNode);
-        }
-
-        // Draw connections
-        for (const conn of connections) {
-            conn.draw(ctx);
-        }
-
-        // Update and draw nodes
-        for (const node of nodes) {
-            node.update();
-            node.draw(ctx, time);
-        }
-
-        // Update and draw pulses
-        for (const pulse of pulses) {
-            pulse.update();
-            pulse.draw(ctx);
-        }
-
-        // Remove dead pulses
-        pulses = pulses.filter(p => p.alive);
-
-        // Cap pulse count to prevent runaway chains
-        if (pulses.length > 80) {
-            pulses = pulses.slice(-60);
-        }
-
-        requestAnimationFrame(draw);
-    }
-
+    // ── Resize ──
     function resize() {
         dpr = window.devicePixelRatio || 1;
         w = canvas.parentElement.clientWidth;
@@ -286,20 +209,139 @@ function initNeuralNetwork(canvas) {
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        initParticles();
     }
 
+    // ── Scroll progress ──
+    let scrollProgress = 0;
+    function updateScroll() {
+        const scrollTop = window.scrollY;
+        const maxScroll = scrollDrive.offsetHeight - window.innerHeight;
+        scrollProgress = Math.max(0, Math.min(1, scrollTop / maxScroll));
+    }
+
+    // ── Main Animation Loop ──
+    let time = 0;
+    function draw() {
+        time += 0.016;
+        frameCount++;
+        ctx.clearRect(0, 0, w, h);
+
+        /*
+          Scroll phases:
+          0.00 - 0.15  Phase 1: Logo + Name visible, particles hidden
+          0.15 - 0.55  Phase 2: Logo fades, particles emerge and scatter
+          0.55 - 0.80  Phase 3: Neural network active, title fades in
+          0.80 - 1.00  Phase 4: CTA fades in
+        */
+
+        const p = scrollProgress;
+
+        // ── Phase control ──
+        // Logo + brand name opacity (visible 0-0.15, fades out 0.15-0.35)
+        const logoAlpha = p < 0.15 ? 1 : p < 0.35 ? 1 - (p - 0.15) / 0.2 : 0;
+
+        // Particle scatter progress (starts at 0.1, fully scattered by 0.55)
+        const scatterProgress = p < 0.1 ? 0 : p < 0.55 ? (p - 0.1) / 0.45 : 1;
+
+        // Network visibility (connections + pulses)
+        const networkAlpha = p < 0.2 ? 0 : p < 0.45 ? (p - 0.2) / 0.25 : p < 0.85 ? 1 : 1 - (p - 0.85) / 0.15;
+
+        // Title opacity (fades in 0.5-0.7)
+        const titleAlpha = p < 0.5 ? 0 : p < 0.7 ? (p - 0.5) / 0.2 : 1;
+
+        // CTA opacity (fades in 0.8-0.95)
+        const ctaAlpha = p < 0.8 ? 0 : (p - 0.8) / 0.2;
+
+        // Scroll indicator opacity
+        const scrollAlpha = p < 0.05 ? 1 : p < 0.15 ? 1 - (p - 0.05) / 0.1 : 0;
+
+        // ── Apply DOM elements ──
+        phaseLogo.style.opacity = logoAlpha;
+        phaseLogo.style.transform = `scale(${1 + (1 - logoAlpha) * 0.2})`;
+        phaseLogo.style.pointerEvents = logoAlpha > 0.5 ? 'auto' : 'none';
+
+        phaseTitle.style.opacity = titleAlpha;
+        phaseTitle.style.transform = `translateY(${(1 - titleAlpha) * 30}px)`;
+        phaseTitle.style.pointerEvents = titleAlpha > 0.5 ? 'auto' : 'none';
+
+        heroCta.style.opacity = ctaAlpha;
+        heroCta.style.transform = `translateY(${(1 - ctaAlpha) * 20}px)`;
+        heroCta.style.pointerEvents = ctaAlpha > 0.5 ? 'auto' : 'none';
+
+        heroScroll.style.opacity = scrollAlpha;
+
+        // ── Canvas: vignette ──
+        // (handled by CSS ::before, but we can add more depth)
+
+        // ── Canvas: Update particles ──
+        for (const p of logoParticles) {
+            p.update(scatterProgress);
+        }
+
+        // ── Canvas: Draw connections ──
+        if (networkAlpha > 0.05) {
+            for (let i = 0; i < logoParticles.length; i++) {
+                for (let j = i + 1; j < logoParticles.length; j++) {
+                    const a = logoParticles[i];
+                    const b = logoParticles[j];
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        const alpha = Math.max(0, 0.06 * (1 - dist / CONNECTION_DIST) * networkAlpha);
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        const mx = (a.x + b.x) / 2 + dy * 0.04;
+                        const my = (a.y + b.y) / 2 - dx * 0.04;
+                        ctx.quadraticCurveTo(mx, my, b.x, b.y);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // ── Canvas: Draw particles ──
+        const particleAlpha = scatterProgress > 0.05 ? Math.min(1, scatterProgress * 2) : 0;
+        if (particleAlpha > 0) {
+            for (const p of logoParticles) {
+                p.draw(ctx, time, particleAlpha);
+            }
+        }
+
+        // ── Canvas: Fire pulses (only when network is visible) ──
+        if (networkAlpha > 0.3 && frameCount % 45 === 0) {
+            const randomNode = logoParticles[Math.floor(Math.random() * logoParticles.length)];
+            randomNode.fire();
+            spawnPulsesFrom(randomNode);
+        }
+
+        // ── Canvas: Update and draw pulses ──
+        for (const pulse of pulses) {
+            pulse.update();
+            pulse.draw(ctx, networkAlpha);
+        }
+        pulses = pulses.filter(p => p.alive);
+        if (pulses.length > 60) pulses = pulses.slice(-40);
+
+        requestAnimationFrame(draw);
+    }
+
+    // ── Events ──
     resize();
-    init();
-    draw();
+
+    window.addEventListener('scroll', updateScroll, { passive: true });
+    updateScroll();
 
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            resize();
-            init();
-        }, 150);
+        resizeTimer = setTimeout(resize, 150);
     });
+
+    draw();
 }
 
 /* ============================================================
