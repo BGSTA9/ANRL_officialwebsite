@@ -415,10 +415,23 @@ textarea {
 }
 
 .hero__emblem {
-  height: 72px;
+  height: 216px;
   width: auto;
-  filter: brightness(0) invert(1);
+  filter: brightness(0);
   transform-origin: center center;
+  animation: logoGlow 3s ease-in-out infinite;
+}
+
+@keyframes logoGlow {
+
+  0%,
+  100% {
+    filter: brightness(0) drop-shadow(0 0 20px rgba(255, 255, 255, 0.15)) drop-shadow(0 0 60px rgba(180, 200, 255, 0.08));
+  }
+
+  50% {
+    filter: brightness(0) drop-shadow(0 0 35px rgba(255, 255, 255, 0.3)) drop-shadow(0 0 80px rgba(180, 200, 255, 0.15)) drop-shadow(0 0 120px rgba(150, 180, 255, 0.06));
+  }
 }
 
 .hero__brand {
@@ -444,6 +457,10 @@ textarea {
   margin: 0;
   opacity: 0;
   white-space: nowrap;
+}
+
+.hero__single-title strong {
+  font-weight: 700;
 }
 
 /* CTA link */

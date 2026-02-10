@@ -231,24 +231,28 @@ function initScrollExperience(scrollDrive, canvas) {
 
         // ── Phase control ──
         /*
-          0.00 - 0.12  Phase 0: Big logo alone, centered
-          0.12 - 0.35  Phase 1: Logo dissipates into particles
-          0.35 - 0.65  Phase 2: Neural network fully active, many pulses
-          0.55 - 0.75  Phase 3: "Argo Navis Research Laboratory" single line fades in
-          0.80 - 1.00  Phase 4: "Explore our research" CTA fades in
+          0.00 - 0.10  Phase 0: Black logo with pulsing glow, alone, centered
+          0.10 - 0.22  Phase 1: Logo glow intensifies, then logo dissolves/splashes away
+          0.18 - 0.45  Phase 2: Particles scatter outward from logo center (splash!)
+          0.30 - 0.90  Phase 3: Neural network active with many firing pulses
+          0.55 - 0.75  Phase 4: "Argo Navis Research Laboratory" fades in
+          0.80 - 1.00  Phase 5: "Explore our research" CTA fades in
         */
 
-        // Logo emblem scale: starts big (3x), never shrinks — just fades out
-        const logoScale = p < 0.05 ? 3 : p < 0.20 ? 3 - 0.5 * ((p - 0.05) / 0.15) : 2.5;
+        // Logo scale: stays at 1 (CSS handles the 216px size), slight grow before dissolve
+        const logoScale = p < 0.08 ? 1 : p < 0.18 ? 1 + 0.15 * ((p - 0.08) / 0.10) : 1.15;
 
-        // Entire logo phase opacity (visible 0-0.12, fades out 0.12-0.32)
-        const logoPhaseAlpha = p < 0.12 ? 1 : p < 0.32 ? 1 - (p - 0.12) / 0.20 : 0;
+        // Logo glow intensification before dissolve
+        const glowIntensity = p < 0.08 ? 1 : p < 0.16 ? 1 + 2 * ((p - 0.08) / 0.08) : 3;
 
-        // Particle scatter progress (starts at 0.10, fully scattered by 0.45)
-        const scatterProgress = p < 0.10 ? 0 : p < 0.45 ? (p - 0.10) / 0.35 : 1;
+        // Entire logo phase opacity (fully visible 0-0.10, rapid fadeout 0.10-0.20)
+        const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.20 ? 1 - (p - 0.10) / 0.10 : 0;
+
+        // Particle scatter progress (starts at 0.12, fully scattered by 0.45)
+        const scatterProgress = p < 0.12 ? 0 : p < 0.45 ? (p - 0.12) / 0.33 : 1;
 
         // Network visibility (connections + pulses)
-        const networkAlpha = p < 0.20 ? 0 : p < 0.40 ? (p - 0.20) / 0.20 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
+        const networkAlpha = p < 0.25 ? 0 : p < 0.40 ? (p - 0.25) / 0.15 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
 
         // Single-line title opacity (fades in 0.55-0.72)
         const titleAlpha = p < 0.55 ? 0 : p < 0.72 ? (p - 0.55) / 0.17 : 1;
@@ -257,14 +261,19 @@ function initScrollExperience(scrollDrive, canvas) {
         const ctaAlpha = p < 0.80 ? 0 : Math.min(1, (p - 0.80) / 0.15);
 
         // Scroll indicator opacity
-        const scrollAlpha = p < 0.05 ? 1 : p < 0.12 ? 1 - (p - 0.05) / 0.07 : 0;
+        const scrollAlpha = p < 0.05 ? 1 : p < 0.10 ? 1 - (p - 0.05) / 0.05 : 0;
 
         // ── Apply DOM elements ──
-        // Logo phase: emblem stays big, whole phase fades out
+        // Logo phase: black emblem with intensifying glow, then dissolves
         phaseLogo.style.opacity = logoPhaseAlpha;
         heroEmblem.style.transform = `scale(${logoScale})`;
+        // Control glow intensity via custom property
+        const glowBase = 20 * glowIntensity;
+        const glowMid = 60 * glowIntensity;
+        const glowOuter = 120 * glowIntensity;
+        heroEmblem.style.filter = `brightness(0) drop-shadow(0 0 ${glowBase}px rgba(255, 255, 255, ${0.15 * glowIntensity})) drop-shadow(0 0 ${glowMid}px rgba(180, 200, 255, ${0.08 * glowIntensity})) drop-shadow(0 0 ${glowOuter}px rgba(150, 180, 255, ${0.06 * glowIntensity}))`;
         phaseLogo.style.pointerEvents = logoPhaseAlpha > 0.5 ? 'auto' : 'none';
-        // Hide brand text in the hero logo phase (it's only in the navbar)
+        // Hide brand text in the hero logo phase
         const brandEl = phaseLogo.querySelector('.hero__brand');
         if (brandEl) brandEl.style.opacity = 0;
         if (brandEl) brandEl.style.display = 'none';
