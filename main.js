@@ -30,14 +30,14 @@ function initScrollExperience(scrollDrive, canvas) {
 
     // DOM elements
     const phaseLogo = document.getElementById('phaselogo');
-    const phaseTitle = document.getElementById('phasetitle');
+    const heroTitle = document.getElementById('heroTitle');
     const heroCta = document.getElementById('heroCta');
     const heroScroll = document.getElementById('heroScroll');
     const heroEmblem = document.getElementById('heroEmblem');
 
     // ── Neural Network Data ──
-    const NODE_COUNT = 100;
-    const CONNECTION_DIST = 160;
+    const NODE_COUNT = 200;
+    const CONNECTION_DIST = 180;
     let nodes = [];
     let connections = [];
     let pulses = [];
@@ -227,67 +227,65 @@ function initScrollExperience(scrollDrive, canvas) {
         frameCount++;
         ctx.clearRect(0, 0, w, h);
 
-        /*
-          Scroll phases:
-          0.00 - 0.15  Phase 1: Logo + Name visible, particles hidden
-          0.15 - 0.55  Phase 2: Logo fades, particles emerge and scatter
-          0.55 - 0.80  Phase 3: Neural network active, title fades in
-          0.80 - 1.00  Phase 4: CTA fades in
-        */
-
         const p = scrollProgress;
 
         // ── Phase control ──
         /*
-          0.00 - 0.08  Phase 0: Big logo alone, centered, no text
-          0.08 - 0.20  Phase 0→1: Logo shrinks, brand name fades in
-          0.20 - 0.40  Phase 1→2: Logo+name fade out, particles emerge
-          0.40 - 0.65  Phase 2: Neural network fully active
-          0.55 - 0.75  Phase 3: Title fades in over network
-          0.80 - 1.00  Phase 4: CTA fades in
+          0.00 - 0.12  Phase 0: Big logo alone, centered
+          0.12 - 0.35  Phase 1: Logo dissipates into particles
+          0.35 - 0.65  Phase 2: Neural network fully active, many pulses
+          0.55 - 0.75  Phase 3: "Argo Navis Research Laboratory" single line fades in
+          0.80 - 1.00  Phase 4: "Explore our research" CTA fades in
         */
 
-        // Logo emblem scale: starts at 2.5, shrinks to 1 during 0.08-0.20
-        const logoScale = p < 0.08 ? 2.5 : p < 0.20 ? 2.5 - 1.5 * ((p - 0.08) / 0.12) : 1;
+        // Logo emblem scale: starts big (3x), never shrinks — just fades out
+        const logoScale = p < 0.05 ? 3 : p < 0.20 ? 3 - 0.5 * ((p - 0.05) / 0.15) : 2.5;
 
-        // Brand name text opacity: hidden at start, fades in during 0.10-0.20
-        const brandAlpha = p < 0.10 ? 0 : p < 0.20 ? (p - 0.10) / 0.10 : 1;
+        // Entire logo phase opacity (visible 0-0.12, fades out 0.12-0.32)
+        const logoPhaseAlpha = p < 0.12 ? 1 : p < 0.32 ? 1 - (p - 0.12) / 0.20 : 0;
 
-        // Entire logo phase opacity (fades out 0.20-0.40)
-        const logoPhaseAlpha = p < 0.20 ? 1 : p < 0.40 ? 1 - (p - 0.20) / 0.20 : 0;
-
-        // Particle scatter progress (starts at 0.15, fully scattered by 0.55)
-        const scatterProgress = p < 0.15 ? 0 : p < 0.55 ? (p - 0.15) / 0.40 : 1;
+        // Particle scatter progress (starts at 0.10, fully scattered by 0.45)
+        const scatterProgress = p < 0.10 ? 0 : p < 0.45 ? (p - 0.10) / 0.35 : 1;
 
         // Network visibility (connections + pulses)
-        const networkAlpha = p < 0.25 ? 0 : p < 0.45 ? (p - 0.25) / 0.20 : p < 0.85 ? 1 : 1 - (p - 0.85) / 0.15;
+        const networkAlpha = p < 0.20 ? 0 : p < 0.40 ? (p - 0.20) / 0.20 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
 
-        // Title opacity (fades in 0.55-0.75)
-        const titleAlpha = p < 0.55 ? 0 : p < 0.75 ? (p - 0.55) / 0.20 : 1;
+        // Single-line title opacity (fades in 0.55-0.72)
+        const titleAlpha = p < 0.55 ? 0 : p < 0.72 ? (p - 0.55) / 0.17 : 1;
 
         // CTA opacity (fades in 0.80-0.95)
-        const ctaAlpha = p < 0.80 ? 0 : (p - 0.80) / 0.20;
+        const ctaAlpha = p < 0.80 ? 0 : Math.min(1, (p - 0.80) / 0.15);
 
         // Scroll indicator opacity
-        const scrollAlpha = p < 0.05 ? 1 : p < 0.15 ? 1 - (p - 0.05) / 0.10 : 0;
+        const scrollAlpha = p < 0.05 ? 1 : p < 0.12 ? 1 - (p - 0.05) / 0.07 : 0;
 
         // ── Apply DOM elements ──
-        // Logo phase: emblem scales down, brand fades in, whole phase fades out
+        // Logo phase: emblem stays big, whole phase fades out
         phaseLogo.style.opacity = logoPhaseAlpha;
         heroEmblem.style.transform = `scale(${logoScale})`;
-        const brandEl = phaseLogo.querySelector('.hero__brand');
-        if (brandEl) brandEl.style.opacity = brandAlpha;
         phaseLogo.style.pointerEvents = logoPhaseAlpha > 0.5 ? 'auto' : 'none';
+        // Hide brand text in the hero logo phase (it's only in the navbar)
+        const brandEl = phaseLogo.querySelector('.hero__brand');
+        if (brandEl) brandEl.style.opacity = 0;
+        if (brandEl) brandEl.style.display = 'none';
 
-        phaseTitle.style.opacity = titleAlpha;
-        phaseTitle.style.transform = `translateY(${(1 - titleAlpha) * 30}px)`;
-        phaseTitle.style.pointerEvents = titleAlpha > 0.5 ? 'auto' : 'none';
+        // Single-line title
+        heroTitle.style.opacity = titleAlpha;
+        heroTitle.style.transform = `translateY(${(1 - titleAlpha) * 25}px)`;
+        heroTitle.style.pointerEvents = titleAlpha > 0.5 ? 'auto' : 'none';
 
         heroCta.style.opacity = ctaAlpha;
         heroCta.style.transform = `translateY(${(1 - ctaAlpha) * 20}px)`;
         heroCta.style.pointerEvents = ctaAlpha > 0.5 ? 'auto' : 'none';
 
         heroScroll.style.opacity = scrollAlpha;
+
+        // ── Navbar fade: fade out the logo text on scroll ──
+        const navLogoText = document.querySelector('.nav__logo-text');
+        if (navLogoText) {
+            const navFade = p < 0.03 ? 1 : p < 0.12 ? 1 - (p - 0.03) / 0.09 : 0;
+            navLogoText.style.opacity = navFade;
+        }
 
         // ── Canvas: vignette ──
         // (handled by CSS ::before, but we can add more depth)
@@ -329,11 +327,15 @@ function initScrollExperience(scrollDrive, canvas) {
             }
         }
 
-        // ── Canvas: Fire pulses (only when network is visible) ──
-        if (networkAlpha > 0.3 && frameCount % 45 === 0) {
-            const randomNode = logoParticles[Math.floor(Math.random() * logoParticles.length)];
-            randomNode.fire();
-            spawnPulsesFrom(randomNode);
+        // ── Canvas: Fire pulses (only when network is visible) — MANY ──
+        if (networkAlpha > 0.3 && frameCount % 12 === 0) {
+            // Fire from 2-3 random nodes each cycle
+            const burstCount = 2 + Math.floor(Math.random() * 2);
+            for (let b = 0; b < burstCount; b++) {
+                const randomNode = logoParticles[Math.floor(Math.random() * logoParticles.length)];
+                randomNode.fire();
+                spawnPulsesFrom(randomNode);
+            }
         }
 
         // ── Canvas: Update and draw pulses ──
@@ -342,7 +344,7 @@ function initScrollExperience(scrollDrive, canvas) {
             pulse.draw(ctx, networkAlpha);
         }
         pulses = pulses.filter(p => p.alive);
-        if (pulses.length > 60) pulses = pulses.slice(-40);
+        if (pulses.length > 150) pulses = pulses.slice(-120);
 
         requestAnimationFrame(draw);
     }

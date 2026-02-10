@@ -241,6 +241,7 @@ textarea {
   align-items: baseline;
   white-space: nowrap;
   overflow: hidden;
+  transition: opacity 0.4s ease;
 }
 
 /* Telescoping logo parts */
@@ -267,14 +268,10 @@ textarea {
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Collapsed state when scrolled */
-.nav.scrolled .logo-hide {
-  max-width: 0;
+/* Collapsed state when scrolled — fade entire text */
+.nav.scrolled .nav__logo-text {
   opacity: 0;
-}
-
-.nav.scrolled .logo-space {
-  width: 0;
+  pointer-events: none;
 }
 
 
@@ -434,30 +431,19 @@ textarea {
   opacity: 0;
 }
 
-/* Phase 3: Title Reveal */
-.hero__phase--title {
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.hero__title-main {
+/* Phase 3: Single-line title */
+.hero__single-title {
+  position: absolute;
+  z-index: 2;
   font-family: var(--font-display);
-  font-size: clamp(3.5rem, 8vw, 7rem);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: var(--white);
-  margin: 0;
-}
-
-.hero__title-sub {
-  font-family: var(--font-display);
-  font-size: clamp(1.2rem, 3vw, 2.2rem);
+  font-size: clamp(1.4rem, 2.8vw, 2.4rem);
   font-weight: 300;
-  color: var(--gray-300);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--white);
+  letter-spacing: 0.04em;
+  text-align: center;
   margin: 0;
+  opacity: 0;
+  white-space: nowrap;
 }
 
 /* CTA link */
