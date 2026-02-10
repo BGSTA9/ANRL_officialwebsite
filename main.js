@@ -238,28 +238,46 @@ function initScrollExperience(scrollDrive, canvas) {
         const p = scrollProgress;
 
         // ── Phase control ──
-        // Logo + brand name opacity (visible 0-0.15, fades out 0.15-0.35)
-        const logoAlpha = p < 0.15 ? 1 : p < 0.35 ? 1 - (p - 0.15) / 0.2 : 0;
+        /*
+          0.00 - 0.08  Phase 0: Big logo alone, centered, no text
+          0.08 - 0.20  Phase 0→1: Logo shrinks, brand name fades in
+          0.20 - 0.40  Phase 1→2: Logo+name fade out, particles emerge
+          0.40 - 0.65  Phase 2: Neural network fully active
+          0.55 - 0.75  Phase 3: Title fades in over network
+          0.80 - 1.00  Phase 4: CTA fades in
+        */
 
-        // Particle scatter progress (starts at 0.1, fully scattered by 0.55)
-        const scatterProgress = p < 0.1 ? 0 : p < 0.55 ? (p - 0.1) / 0.45 : 1;
+        // Logo emblem scale: starts at 2.5, shrinks to 1 during 0.08-0.20
+        const logoScale = p < 0.08 ? 2.5 : p < 0.20 ? 2.5 - 1.5 * ((p - 0.08) / 0.12) : 1;
+
+        // Brand name text opacity: hidden at start, fades in during 0.10-0.20
+        const brandAlpha = p < 0.10 ? 0 : p < 0.20 ? (p - 0.10) / 0.10 : 1;
+
+        // Entire logo phase opacity (fades out 0.20-0.40)
+        const logoPhaseAlpha = p < 0.20 ? 1 : p < 0.40 ? 1 - (p - 0.20) / 0.20 : 0;
+
+        // Particle scatter progress (starts at 0.15, fully scattered by 0.55)
+        const scatterProgress = p < 0.15 ? 0 : p < 0.55 ? (p - 0.15) / 0.40 : 1;
 
         // Network visibility (connections + pulses)
-        const networkAlpha = p < 0.2 ? 0 : p < 0.45 ? (p - 0.2) / 0.25 : p < 0.85 ? 1 : 1 - (p - 0.85) / 0.15;
+        const networkAlpha = p < 0.25 ? 0 : p < 0.45 ? (p - 0.25) / 0.20 : p < 0.85 ? 1 : 1 - (p - 0.85) / 0.15;
 
-        // Title opacity (fades in 0.5-0.7)
-        const titleAlpha = p < 0.5 ? 0 : p < 0.7 ? (p - 0.5) / 0.2 : 1;
+        // Title opacity (fades in 0.55-0.75)
+        const titleAlpha = p < 0.55 ? 0 : p < 0.75 ? (p - 0.55) / 0.20 : 1;
 
-        // CTA opacity (fades in 0.8-0.95)
-        const ctaAlpha = p < 0.8 ? 0 : (p - 0.8) / 0.2;
+        // CTA opacity (fades in 0.80-0.95)
+        const ctaAlpha = p < 0.80 ? 0 : (p - 0.80) / 0.20;
 
         // Scroll indicator opacity
-        const scrollAlpha = p < 0.05 ? 1 : p < 0.15 ? 1 - (p - 0.05) / 0.1 : 0;
+        const scrollAlpha = p < 0.05 ? 1 : p < 0.15 ? 1 - (p - 0.05) / 0.10 : 0;
 
         // ── Apply DOM elements ──
-        phaseLogo.style.opacity = logoAlpha;
-        phaseLogo.style.transform = `scale(${1 + (1 - logoAlpha) * 0.2})`;
-        phaseLogo.style.pointerEvents = logoAlpha > 0.5 ? 'auto' : 'none';
+        // Logo phase: emblem scales down, brand fades in, whole phase fades out
+        phaseLogo.style.opacity = logoPhaseAlpha;
+        heroEmblem.style.transform = `scale(${logoScale})`;
+        const brandEl = phaseLogo.querySelector('.hero__brand');
+        if (brandEl) brandEl.style.opacity = brandAlpha;
+        phaseLogo.style.pointerEvents = logoPhaseAlpha > 0.5 ? 'auto' : 'none';
 
         phaseTitle.style.opacity = titleAlpha;
         phaseTitle.style.transform = `translateY(${(1 - titleAlpha) * 30}px)`;

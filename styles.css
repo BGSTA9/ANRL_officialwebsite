@@ -421,6 +421,7 @@ textarea {
   height: 72px;
   width: auto;
   filter: brightness(0) invert(1);
+  transform-origin: center center;
 }
 
 .hero__brand {
@@ -430,6 +431,7 @@ textarea {
   color: var(--white);
   letter-spacing: 0.02em;
   white-space: nowrap;
+  opacity: 0;
 }
 
 /* Phase 3: Title Reveal */
