@@ -231,28 +231,28 @@ function initScrollExperience(scrollDrive, canvas) {
 
         // ── Phase control ──
         /*
-          0.00 - 0.10  Phase 0: Black logo with pulsing glow, alone, centered
-          0.10 - 0.22  Phase 1: Logo glow intensifies, then logo dissolves/splashes away
-          0.18 - 0.45  Phase 2: Particles scatter outward from logo center (splash!)
-          0.30 - 0.90  Phase 3: Neural network active with many firing pulses
+          0.00 - 0.10  Phase 0: Black logo with white edge-line glow, centered
+          0.08 - 0.18  Phase 1: Edge glow intensifies, logo dissolves into particles
+          0.08 - 0.40  Phase 2: Particles scatter outward (splash!)
+          0.15 - 0.90  Phase 3: Neural network active — almost immediate after logo
           0.55 - 0.75  Phase 4: "Argo Navis Research Laboratory" fades in
           0.80 - 1.00  Phase 5: "Explore our research" CTA fades in
         */
 
-        // Logo scale: stays at 1 (CSS handles the 216px size), slight grow before dissolve
+        // Logo scale: stays at 1, slight grow before dissolve
         const logoScale = p < 0.08 ? 1 : p < 0.18 ? 1 + 0.15 * ((p - 0.08) / 0.10) : 1.15;
 
-        // Logo glow intensification before dissolve
-        const glowIntensity = p < 0.08 ? 1 : p < 0.16 ? 1 + 2 * ((p - 0.08) / 0.08) : 3;
+        // Edge-glow intensity (tight white outline brightens before dissolve)
+        const glowIntensity = p < 0.06 ? 1 : p < 0.14 ? 1 + 3 * ((p - 0.06) / 0.08) : 4;
 
-        // Entire logo phase opacity (fully visible 0-0.10, rapid fadeout 0.10-0.20)
-        const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.20 ? 1 - (p - 0.10) / 0.10 : 0;
+        // Logo phase opacity (visible 0-0.10, rapid fadeout 0.10-0.18)
+        const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.18 ? 1 - (p - 0.10) / 0.08 : 0;
 
-        // Particle scatter progress (starts at 0.12, fully scattered by 0.45)
-        const scatterProgress = p < 0.12 ? 0 : p < 0.45 ? (p - 0.12) / 0.33 : 1;
+        // Particle scatter (starts at 0.08 — overlaps with logo dissolve)
+        const scatterProgress = p < 0.08 ? 0 : p < 0.40 ? (p - 0.08) / 0.32 : 1;
 
-        // Network visibility (connections + pulses)
-        const networkAlpha = p < 0.25 ? 0 : p < 0.40 ? (p - 0.25) / 0.15 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
+        // Network visibility — fades in very quickly after logo (0.15, was 0.25)
+        const networkAlpha = p < 0.15 ? 0 : p < 0.30 ? (p - 0.15) / 0.15 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
 
         // Single-line title opacity (fades in 0.55-0.72)
         const titleAlpha = p < 0.55 ? 0 : p < 0.72 ? (p - 0.55) / 0.17 : 1;
@@ -264,14 +264,15 @@ function initScrollExperience(scrollDrive, canvas) {
         const scrollAlpha = p < 0.05 ? 1 : p < 0.10 ? 1 - (p - 0.05) / 0.05 : 0;
 
         // ── Apply DOM elements ──
-        // Logo phase: black emblem with intensifying glow, then dissolves
+        // Logo phase: black emblem with intensifying white edge-glow, then dissolves
         phaseLogo.style.opacity = logoPhaseAlpha;
         heroEmblem.style.transform = `scale(${logoScale})`;
-        // Control glow intensity via custom property
-        const glowBase = 20 * glowIntensity;
-        const glowMid = 60 * glowIntensity;
-        const glowOuter = 120 * glowIntensity;
-        heroEmblem.style.filter = `brightness(0) drop-shadow(0 0 ${glowBase}px rgba(255, 255, 255, ${0.15 * glowIntensity})) drop-shadow(0 0 ${glowMid}px rgba(180, 200, 255, ${0.08 * glowIntensity})) drop-shadow(0 0 ${glowOuter}px rgba(150, 180, 255, ${0.06 * glowIntensity}))`;
+        // Tight edge-line glow (1-6px drop-shadows, not diffuse aura)
+        const e1 = Math.min(1, 0.9 * glowIntensity);
+        const e2 = Math.min(1, 0.6 * glowIntensity);
+        const e3 = Math.min(1, 0.3 * glowIntensity);
+        const r3 = 4 + glowIntensity * 1.5;
+        heroEmblem.style.filter = `brightness(0) drop-shadow(0 0 1px rgba(255,255,255,${e1})) drop-shadow(0 0 2px rgba(255,255,255,${e2})) drop-shadow(0 0 ${r3}px rgba(255,255,255,${e3}))`;
         phaseLogo.style.pointerEvents = logoPhaseAlpha > 0.5 ? 'auto' : 'none';
         // Hide brand text in the hero logo phase
         const brandEl = phaseLogo.querySelector('.hero__brand');
