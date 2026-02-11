@@ -257,21 +257,18 @@ function initScrollExperience(scrollDrive, canvas) {
         heroScroll.style.opacity = scrollAlpha;
 
         const nav = document.querySelector('.nav');
+        const navLinksEl = document.getElementById('navLinks');
         if (nav) {
             nav.style.opacity = navAlpha;
-            // nav.style.pointerEvents = navAlpha > 0.1 ? 'auto' : 'none'; 
-            // Pointer events handled by CSS class 'scrolled' mostly, but let's leave JS control if needed.
-            // Actually CSS now has pointer-events: none on .nav and auto on .scrolled.
-            // But .scrolled is added by components.js based on scrollY > 40. 
-            // If navAlpha is 0, we want none. If navAlpha is 1, we want auto.
-            // Since we override opacity here, let's strictly control pointerEvents here too to be safe.
             if (navAlpha > 0.1) {
                 nav.style.pointerEvents = 'auto';
             } else if (!nav.classList.contains('scrolled')) {
-                // Only disable if not scrolled effectively? 
-                // Actually, if we are in the "hidden" phase, we disable.
                 nav.style.pointerEvents = 'none';
             }
+        }
+        if (navLinksEl && !navLinksEl.classList.contains('open')) {
+            navLinksEl.style.opacity = navAlpha;
+            navLinksEl.style.pointerEvents = navAlpha > 0.1 ? 'auto' : 'none';
         }
 
         // ── Render Neural Network ──

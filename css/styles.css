@@ -203,6 +203,16 @@ textarea {
   pointer-events: none;
 }
 
+/* Non-home pages: nav is always visible */
+.nav.nav--visible {
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom-color: var(--border-subtle);
+}
+
 .nav.scrolled {
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(20px);
@@ -275,10 +285,26 @@ textarea {
 
 
 
+/* Desktop: links sit in the nav bar area */
 .nav__links {
+  position: fixed;
+  top: 0;
+  right: var(--side-padding);
+  height: var(--nav-height);
+  z-index: 1001;
   display: flex;
   align-items: center;
   gap: var(--space-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration) var(--ease);
+}
+
+/* Show links when nav is scrolled or on non-home pages */
+.nav.scrolled~.nav__links,
+.nav.nav--visible~.nav__links {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .nav__link {
@@ -1068,24 +1094,39 @@ textarea {
     --nav-height: 60px;
   }
 
-  /* Mobile Nav */
+  /* Mobile Nav - full-screen overlay */
   .nav__links {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.97);
-    backdrop-filter: blur(20px);
+    right: 0;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1002;
+    background: #000000;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: var(--space-xl);
     opacity: 0;
+    pointer-events: none;
     visibility: hidden;
     transition: opacity var(--duration) var(--ease),
       visibility var(--duration) var(--ease);
   }
 
-  .nav__links.open {
+  /* Override the desktop sibling-based visibility */
+  .nav.scrolled~.nav__links,
+  .nav.nav--visible~.nav__links {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .nav__links.open,
+  .nav.scrolled~.nav__links.open,
+  .nav.nav--visible~.nav__links.open {
     opacity: 1;
+    pointer-events: auto;
     visibility: visible;
   }
 
@@ -1095,6 +1136,7 @@ textarea {
 
   .nav__toggle {
     display: flex;
+    z-index: 1003;
   }
 
   /* Hero mobile */

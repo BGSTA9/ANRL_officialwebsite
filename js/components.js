@@ -19,15 +19,18 @@ function renderNav(activePage) {
   const nav = document.createElement('nav');
   nav.className = 'nav';
   nav.id = 'nav';
+
+  // On non-home pages, make nav always visible
+  if (activePage !== 'home') {
+    nav.classList.add('nav--visible');
+  }
+
   nav.innerHTML = `
     <div class="nav__inner">
       <a href="index.html" class="nav__logo">
         <img src="assets/ANReLa.svg" alt="ANReLa" />
         <span class="nav__logo-text">Argo Navis Research Laboratory</span>
       </a>
-      <div class="nav__links" id="navLinks">
-        ${links}
-      </div>
       <button class="nav__toggle" id="navToggle" aria-label="Menu">
         <span></span>
         <span></span>
@@ -37,6 +40,14 @@ function renderNav(activePage) {
   `;
 
   document.body.prepend(nav);
+
+  // Create mobile overlay as a separate element outside nav
+  // (backdrop-filter on .nav creates a containing block that breaks position:fixed)
+  const mobileOverlay = document.createElement('div');
+  mobileOverlay.className = 'nav__links';
+  mobileOverlay.id = 'navLinks';
+  mobileOverlay.innerHTML = links;
+  document.body.insertBefore(mobileOverlay, nav.nextSibling);
 
   // Mobile menu toggle
   const toggle = document.getElementById('navToggle');
