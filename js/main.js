@@ -47,7 +47,7 @@ function initScrollExperience(scrollDrive, canvas) {
 
     // ── Image Asset ──
     const neuralImg = new Image();
-    neuralImg.src = 'assets/ANReaL.png';
+    neuralImg.src = 'assets/argoneural.png';
     let imageLoaded = false;
 
     // ── Animation State ──
@@ -89,9 +89,8 @@ function initScrollExperience(scrollDrive, canvas) {
         maskCanvas.height = h;
 
         // Calculate "Cover" fit
-        // Calculate "Cover" fit users asked to zoom out to see more neurons
-        // We multiply by 0.6 to zoom out significantly while keeping it centered
-        const scale = Math.max(w / neuralImg.width, h / neuralImg.height) * 0.6;
+        // Calculate "Cover" fit users asked to fill entire website with image
+        const scale = Math.max(w / neuralImg.width, h / neuralImg.height);
         imgDrawW = neuralImg.width * scale;
         imgDrawH = neuralImg.height * scale;
         imgDrawX = (w - imgDrawW) / 2;
