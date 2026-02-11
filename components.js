@@ -69,7 +69,12 @@ function renderNav(activePage) {
 }
 
 function renderFooter() {
-  if (!window.location.pathname.endsWith('join.html')) return;
+  // Only show footer on the "Join Us" page
+  // Check if pathname contains 'join.html' OR if the active nav item passed to renderNav was 'join'
+  // But renderNav is separate. Let's rely on the URL or allow an override.
+  // Simple check:
+  if (!window.location.href.includes('join.html')) return;
+
   const footer = document.createElement('footer');
   footer.className = 'footer';
   footer.innerHTML = `
