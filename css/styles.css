@@ -1148,3 +1148,23 @@ textarea {
     padding: var(--space-lg);
   }
 }
+
+/* ============================================================
+   STORY PAGE HERO IMAGE
+   ============================================================ */
+.story-hero-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+  width: 100%;
+}
+
+.story-hero-image {
+  max-width: 120px;
+  /* Adjust size as needed */
+  height: auto;
+  filter: brightness(0) invert(1);
+  /* Turns black to white */
+  opacity: 1;
+  display: block;
+}
