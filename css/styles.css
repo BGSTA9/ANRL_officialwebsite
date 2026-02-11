@@ -1168,9 +1168,8 @@ textarea {
 .story-header-image {
   display: flex;
   justify-content: flex-end;
-  /* Cinematic look: white and opaque */
+  /* Cinematic look: original color (black) */
   opacity: 1;
-  filter: invert(1);
   pointer-events: none;
   user-select: none;
 }
