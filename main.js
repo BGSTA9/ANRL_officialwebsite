@@ -48,6 +48,7 @@ function initScrollExperience(scrollDrive, canvas) {
     let imageLoaded = false;
 
     // ── Animation State ──
+    let isLocked = false;
     let nodes = []; // {x, y, freq, phase}
     let paths = []; // {x, y}
     let activeFlickers = []; // {type, x, y, life, decay, radius}
@@ -190,7 +191,15 @@ function initScrollExperience(scrollDrive, canvas) {
         frameCount++;
         ctx.clearRect(0, 0, w, h);
 
-        const p = scrollProgress;
+        // Lock Logic: If we passed the threshold for full reveal, lock it.
+        // Threshold for Motto reveal is 0.45. Let's lock a bit after that, e.g., 0.6
+        if (!isLocked && scrollProgress > 0.6) {
+            isLocked = true;
+        }
+
+        // Use effective progress: if locked, act as if we are fully "scrolled in" for the scene
+        // We use 0.8 as the "full state" reference point where everything is visible
+        const p = isLocked ? 0.8 : scrollProgress;
 
         // Phases & Opacities
         // Phase 1: Big Logo (always white)
@@ -198,7 +207,7 @@ function initScrollExperience(scrollDrive, canvas) {
         const logoPhaseAlpha = p < 0.10 ? 1 : Math.max(0, 1 - (p - 0.10) / 0.05);
         const logoScale = 1 + p * 0.5; // Slight zoom out/in effect
 
-        // Phase 2: Elements reveal
+        // Phase 2: Elements reveal sequence
         // 1. Neural Network (starts early)
         const networkAlpha = p < 0.05 ? 0 : Math.min(1, (p - 0.05) / 0.10);
 
@@ -213,7 +222,7 @@ function initScrollExperience(scrollDrive, canvas) {
         const smallLogoAlpha = p < 0.35 ? 0 : Math.min(1, (p - 0.35) / 0.10);
         const smallLogoY = (1 - smallLogoAlpha) * 20 - 60; // Offset to start slightly higher
 
-        // 5. Motto "Research..." (keeps appearing last)
+        // 5. Motto "Research..." (appears last)
         const subtitleAlpha = p < 0.45 ? 0 : Math.min(1, (p - 0.45) / 0.10);
         const subtitleY = (1 - subtitleAlpha) * 20 + 50;
 
@@ -246,7 +255,19 @@ function initScrollExperience(scrollDrive, canvas) {
         const nav = document.querySelector('.nav');
         if (nav) {
             nav.style.opacity = navAlpha;
-            nav.style.pointerEvents = navAlpha > 0.1 ? 'auto' : 'none';
+            // nav.style.pointerEvents = navAlpha > 0.1 ? 'auto' : 'none'; 
+            // Pointer events handled by CSS class 'scrolled' mostly, but let's leave JS control if needed.
+            // Actually CSS now has pointer-events: none on .nav and auto on .scrolled.
+            // But .scrolled is added by components.js based on scrollY > 40. 
+            // If navAlpha is 0, we want none. If navAlpha is 1, we want auto.
+            // Since we override opacity here, let's strictly control pointerEvents here too to be safe.
+            if (navAlpha > 0.1) {
+                nav.style.pointerEvents = 'auto';
+            } else if (!nav.classList.contains('scrolled')) {
+                // Only disable if not scrolled effectively? 
+                // Actually, if we are in the "hidden" phase, we disable.
+                nav.style.pointerEvents = 'none';
+            }
         }
 
         // ── Render Neural Network ──
@@ -279,17 +300,10 @@ function initScrollExperience(scrollDrive, canvas) {
             activeFlickers.forEach(f => f.draw(maskCtx));
 
             // Step B: Clip the flickers using the neural image
-            // 'multiply' or 'source-in' works. 
-            // We draw the image ON TOP of the white blobs using 'source-in' => keeps image pixels only where blobs are alpha>0
-            // Actually, we want the BRIGHTNESS of the image to mask the blobs.
-            // Let's use 'multiply' to tint the white blobs with the image content? 
-            // Better: Draw Image. Draw Blobs with 'destination-in'? No.
-            // Best: Draw Blobs. Draw Image with 'source-in'. Result = Image pixels, but clipped to blobs.
             maskCtx.globalCompositeOperation = 'source-in';
             maskCtx.drawImage(neuralImg, imgDrawX, imgDrawY, imgDrawW, imgDrawH);
 
             // Step C: Draw the masked result onto proper canvas
-            // Use 'lighter' (additive) to make them glow
             ctx.globalCompositeOperation = 'lighter';
             ctx.globalAlpha = 1.0 * networkAlpha; // Full brightness for flashes
             ctx.drawImage(maskCanvas, 0, 0);
@@ -313,6 +327,8 @@ function initScrollExperience(scrollDrive, canvas) {
         if (navLogo) {
             navLogo.addEventListener('click', (e) => {
                 e.preventDefault();
+                // Unlock state and reset
+                isLocked = false;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
