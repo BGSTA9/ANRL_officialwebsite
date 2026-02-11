@@ -218,8 +218,12 @@ function initScrollExperience(scrollDrive, canvas) {
         heroCta.style.transform = `translateY(${(1 - ctaAlpha) * 20}px)`;
         heroScroll.style.opacity = scrollAlpha;
 
-        const navLogo = document.querySelector('.nav__logo-text');
-        if (navLogo) navLogo.style.opacity = p < 0.12 ? 1 : 0;
+        const nav = document.querySelector('.nav');
+        if (nav) {
+            const navAlpha = p < 0.1 ? 0 : Math.min(1, (p - 0.1) * 5);
+            nav.style.opacity = navAlpha;
+            nav.style.pointerEvents = navAlpha > 0.1 ? 'auto' : 'none';
+        }
 
         // ── Render Neural Network ──
         if (networkAlpha > 0.01 && imageLoaded) {
@@ -278,7 +282,28 @@ function initScrollExperience(scrollDrive, canvas) {
     updateScroll();
     let resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
+
+    // Reset listener
+    setTimeout(() => {
+        const navLogo = document.querySelector('.nav__logo');
+        if (navLogo) {
+            navLogo.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    }, 500);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const scrollDrive = document.getElementById('scrollDrive');
+    const heroCanvas = document.getElementById('heroCanvas');
+    if (scrollDrive && heroCanvas) {
+        initScrollExperience(scrollDrive, heroCanvas);
+    }
+});
+
+
 
 
 function initContactForm(form) {
