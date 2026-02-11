@@ -107,57 +107,114 @@ function initScrollExperience(scrollDrive, canvas) {
             this.from = fromNode;
             this.to = toNode;
             this.progress = 0;
-            this.speed = 0.015 + Math.random() * 0.01;
-            this.alive = true;
-            this.trail = [];
+            this.life = 1; // 1 = alive/travelling, < 1 = fading out after arrival
+            this.speed = 0.02 + Math.random() * 0.01; // Slightly faster
+            this.state = 'travelling'; // 'travelling' or 'fading'
         }
 
         update() {
-            this.progress += this.speed;
-            if (this.progress >= 1) {
-                this.to.fire();
-                this.alive = false;
-                // Chain reaction
-                if (Math.random() < 0.3) {
-                    spawnPulsesFrom(this.to);
+            if (this.state === 'travelling') {
+                this.progress += this.speed;
+                if (this.progress >= 1) {
+                    this.progress = 1;
+                    this.state = 'fading';
+                    this.to.fire();
+                    // Chain reaction
+                    if (Math.random() < 0.4) { // Increased chain chance
+                        spawnPulsesFrom(this.to);
+                    }
                 }
-                return;
+            } else {
+                // Fading out
+                this.life -= 0.03; // Fade speed
             }
-
-            const t = this.progress;
-            const mx = (this.from.x + this.to.x) / 2 + (this.to.y - this.from.y) * 0.06;
-            const my = (this.from.y + this.to.y) / 2 - (this.to.x - this.from.x) * 0.06;
-            const cx = (1 - t) * (1 - t) * this.from.x + 2 * (1 - t) * t * mx + t * t * this.to.x;
-            const cy = (1 - t) * (1 - t) * this.from.y + 2 * (1 - t) * t * my + t * t * this.to.y;
-
-            this.trail.push({ x: cx, y: cy });
-            if (this.trail.length > 10) this.trail.shift();
         }
 
         draw(ctx, networkAlpha) {
-            if (networkAlpha < 0.1) return;
-            // Trail
-            for (let i = 0; i < this.trail.length; i++) {
-                const pt = this.trail[i];
-                const fade = (i + 1) / this.trail.length;
-                const alpha = fade * 0.8 * networkAlpha;
-                const radius = 1 + fade * 1.5;
+            if (this.life <= 0 || networkAlpha < 0.01) return;
+
+            // Calculate curve points
+            const mx = (this.from.x + this.to.x) / 2 + (this.to.y - this.from.y) * 0.06;
+            const my = (this.from.y + this.to.y) / 2 - (this.to.x - this.from.x) * 0.06;
+
+            // Draw the full path if fading, or partial path if travelling
+            // Valid only if we can draw partial curves. 
+            // Simplified approach: Draw the full curve, but use a gradient or mask?
+            // Canvas path animation is tricky. 
+            // Better approximation: 
+            // If travelling, draw from Start to CurrentPos.
+            // If fading, draw Start to End with opacity = life.
+
+            const t = this.progress;
+
+            // Current tip position
+            const cx = (1 - t) * (1 - t) * this.from.x + 2 * (1 - t) * t * mx + t * t * this.to.x;
+            const cy = (1 - t) * (1 - t) * this.from.y + 2 * (1 - t) * t * my + t * t * this.to.y;
+
+            ctx.beginPath();
+            ctx.moveTo(this.from.x, this.from.y);
+
+            // We need to draw a quadratic curve from Start to Current(cx,cy)
+            // But a segment of a quad curve is not easily defined by just one control point.
+            // A simple approximation is fine for valid perception.
+            // Let's draw the full curve but clip it? No, expensive.
+            // Let's just draw lineTo for now? No, curves are nice.
+            // True sub-curve splitting is ideal but complex. 
+            // Approximation: Draw quad curve to (cx, cy) using an interpolated control point.
+
+            const subMx = (1 - t) * this.from.x + t * mx;
+            const subMy = (1 - t) * this.from.y + t * my;
+
+            // Actually, for visual speed, just drawing the full curve with a gradient opacity 
+            // masked by progress is the mostly "synapse" look. 
+            // But user said "nerve path is shown". So it should grow.
+
+            // Let's do the "trace" style: a path that grows.
+            // We will use standard quadraticCurveTo but stop at current T?
+            // Canvas doesn't support "draw only 50% of this curve".
+
+            // Workaround: Draw the pulses as "projectiles" leaving a trail?
+            // No, user wants the "path" to show.
+
+            // Approach: Interpolate a few points along the curve and connect them.
+            // 10 segments is enough smoothness.
+
+            const segments = Math.floor(10 * t);
+            if (segments > 0) {
                 ctx.beginPath();
-                ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.fill();
+                ctx.moveTo(this.from.x, this.from.y);
+                for (let i = 1; i <= segments; i++) {
+                    const segT = (i / 10) * t; // Scale to current max progress? No, just use i/10 if t=1
+                    // Actually we want to draw from 0 to t.
+                    const loopT = (i / segments) * t;
+                    const lx = (1 - loopT) * (1 - loopT) * this.from.x + 2 * (1 - loopT) * loopT * mx + loopT * loopT * this.to.x;
+                    const ly = (1 - loopT) * (1 - loopT) * this.from.y + 2 * (1 - loopT) * loopT * my + loopT * loopT * this.to.y;
+                    ctx.lineTo(lx, ly);
+                }
+                // Connect to final tip
+                ctx.lineTo(cx, cy);
+
+                const alpha = this.life * networkAlpha * 0.8;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = 1; // Thin nerve
+                ctx.stroke();
             }
 
-            // Bright head
-            if (this.trail.length > 0) {
-                const head = this.trail[this.trail.length - 1];
-                const gradient = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 8);
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${0.6 * networkAlpha})`);
-                gradient.addColorStop(0.4, `rgba(255, 255, 255, ${0.15 * networkAlpha})`);
-                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            // Draw glowing head/spark if travelling or just arrived
+            if (this.state === 'travelling' || this.life > 0.8) {
+                const headAlpha = this.life * networkAlpha;
                 ctx.beginPath();
-                ctx.arc(head.x, head.y, 8, 0, Math.PI * 2);
-                ctx.fillStyle = gradient;
+                ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${headAlpha})`;
+                ctx.fill();
+
+                // Glow
+                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 8);
+                g.addColorStop(0, `rgba(255, 255, 255, ${headAlpha})`);
+                g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.beginPath();
+                ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+                ctx.fillStyle = g;
                 ctx.fill();
             }
         }
@@ -314,6 +371,9 @@ function initScrollExperience(scrollDrive, canvas) {
 
         // ── Canvas: Draw connections ──
         if (networkAlpha > 0.05) {
+            // Keep static connections VERY faint or basically invisible
+            const connectionAlpha = 0.03 * networkAlpha; // Reduced from 0.06
+
             for (let i = 0; i < logoParticles.length; i++) {
                 for (let j = i + 1; j < logoParticles.length; j++) {
                     const a = logoParticles[i];
@@ -322,15 +382,17 @@ function initScrollExperience(scrollDrive, canvas) {
                     const dy = b.y - a.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < CONNECTION_DIST) {
-                        const alpha = Math.max(0, 0.06 * (1 - dist / CONNECTION_DIST) * networkAlpha);
-                        ctx.beginPath();
-                        ctx.moveTo(a.x, a.y);
-                        const mx = (a.x + b.x) / 2 + dy * 0.04;
-                        const my = (a.y + b.y) / 2 - dx * 0.04;
-                        ctx.quadraticCurveTo(mx, my, b.x, b.y);
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.stroke();
+                        const alpha = Math.max(0, connectionAlpha * (1 - dist / CONNECTION_DIST));
+                        if (alpha > 0.005) { // Optimization: don't draw extremely faint lines
+                            ctx.beginPath();
+                            ctx.moveTo(a.x, a.y);
+                            const mx = (a.x + b.x) / 2 + dy * 0.04;
+                            const my = (a.y + b.y) / 2 - dx * 0.04;
+                            ctx.quadraticCurveTo(mx, my, b.x, b.y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
                     }
                 }
             }
@@ -360,8 +422,8 @@ function initScrollExperience(scrollDrive, canvas) {
             pulse.update();
             pulse.draw(ctx, networkAlpha);
         }
-        pulses = pulses.filter(p => p.alive);
-        if (pulses.length > 150) pulses = pulses.slice(-120);
+        pulses = pulses.filter(p => p.life > 0); // Filter by life instead of alive boolean
+        if (pulses.length > 200) pulses = pulses.slice(-150);
 
         requestAnimationFrame(draw);
     }
