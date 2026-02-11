@@ -1168,10 +1168,9 @@ textarea {
 .story-header-image {
   display: flex;
   justify-content: flex-end;
-  /* Cinematic look: semi-transparent white */
-  opacity: 0.5;
+  /* Cinematic look: white and opaque */
+  opacity: 1;
   filter: invert(1);
-  mix-blend-mode: screen;
   pointer-events: none;
   user-select: none;
 }
@@ -1196,7 +1195,7 @@ textarea {
     order: -1;
     /* Image on top on mobile? or below? Let's keep it subtle in background or top */
     margin-bottom: var(--space-md);
-    opacity: 0.15;
+    opacity: 0.5;
   }
 
   .story-header-image img {
