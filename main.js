@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         initContactForm(form);
     }
+
+    // -- Disable Right Click --
+    document.addEventListener('contextmenu', event => event.preventDefault());
 });
 
 /* ============================================================
