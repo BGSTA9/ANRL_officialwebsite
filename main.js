@@ -29,7 +29,6 @@ function initScrollExperience(scrollDrive, canvas) {
     let w, h, dpr;
 
     // DOM elements
-    // DOM elements
     const phaseLogo = document.getElementById('phaselogo');
     const heroTitle = document.getElementById('heroTitle');
     const heroSubtitle = document.getElementById('heroSubtitle'); // NEW
@@ -235,27 +234,30 @@ function initScrollExperience(scrollDrive, canvas) {
         // ── Phase control ──
         /*
           0.00 - 0.10  Phase 0: White logo, huge
-          0.08 - 0.15  Phase 1: Logo dissolves into particles
-          0.08 - 0.40  Phase 2: Particles scatter outward
-          0.12 - 0.90  Phase 3: Neural network active — immediate overlap
-          0.20 - 0.50  Phase 4: "Argo Navis Research Laboratory" fades in FAST
-          0.80 - 1.00  Phase 5: "Explore our research" CTA fades in
+          0.10 - 0.12  Phase 1: Splash/Explosion (very fast 2% scroll)
+          0.10 - 0.90  Phase 2: Neural network active & full screen (immediate)
+          0.20 - 0.50  Phase 3: "Argo Navis..." title fades in
+          0.30 - 0.60  Phase 4: "Research, Simulate..." subtitle fades in
+          0.80 - 1.00  Phase 5: CTA fades in
         */
 
-        // Logo scale: stays at 1, slight grow before dissolve
-        const logoScale = p < 0.08 ? 1 : p < 0.18 ? 1 + 0.15 * ((p - 0.08) / 0.10) : 1.15;
+        // Logo scale: slight grow
+        const logoScale = p < 0.08 ? 1 : p < 0.12 ? 1 + 0.1 : 1.1;
 
-        // Logo phase opacity (visible 0-0.10, rapid fadeout 0.10-0.15)
-        const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.15 ? 1 - (p - 0.10) / 0.05 : 0;
+        // Logo phase opacity: 1 until 0.10, then gone by 0.12.
+        const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.12 ? 1 - (p - 0.10) / 0.02 : 0;
 
-        // Particle scatter (starts at 0.08 — overlaps with logo dissolve)
-        const scatterProgress = p < 0.08 ? 0 : p < 0.40 ? (p - 0.08) / 0.32 : 1;
+        // Particle scatter (Explosion): starts at 0.10, ends at 0.12 (instant splash)
+        const scatterProgress = p < 0.10 ? 0 : p < 0.12 ? (p - 0.10) / 0.02 : 1;
 
-        // Network visibility — fades in very quickly, overlapping loss of logo (starts 0.12)
-        const networkAlpha = p < 0.12 ? 0 : p < 0.25 ? (p - 0.12) / 0.13 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
+        // Network visibility: overlaps logo fade. Starts 0.10, full by 0.12.
+        const networkAlpha = p < 0.10 ? 0 : p < 0.12 ? (p - 0.10) / 0.02 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
 
         // Single-line title opacity (fades in 0.20-0.35 — EARLIER/FASTER)
         const titleAlpha = p < 0.20 ? 0 : p < 0.35 ? (p - 0.20) / 0.15 : 1;
+
+        // Subtitle opacity (0.30-0.45) - appears after title
+        const subtitleAlpha = p < 0.30 ? 0 : p < 0.45 ? (p - 0.30) / 0.15 : 1;
 
         // CTA opacity (fades in 0.80-0.95)
         const ctaAlpha = p < 0.80 ? 0 : Math.min(1, (p - 0.80) / 0.15);
@@ -264,10 +266,10 @@ function initScrollExperience(scrollDrive, canvas) {
         const scrollAlpha = p < 0.05 ? 1 : p < 0.10 ? 1 - (p - 0.05) / 0.05 : 0;
 
         // ── Apply DOM elements ──
-        // Logo phase: White logo. No glow.
+
+        // Logo
         phaseLogo.style.opacity = logoPhaseAlpha;
         heroEmblem.style.transform = `scale(${logoScale})`;
-
         // Pure white logo
         heroEmblem.style.filter = `brightness(0) invert(1)`;
 
@@ -277,10 +279,17 @@ function initScrollExperience(scrollDrive, canvas) {
         if (brandEl) brandEl.style.opacity = 0;
         if (brandEl) brandEl.style.display = 'none';
 
-        // Single-line title
+        // Title
         heroTitle.style.opacity = titleAlpha;
         heroTitle.style.transform = `translateY(${(1 - titleAlpha) * 25}px)`;
         heroTitle.style.pointerEvents = titleAlpha > 0.5 ? 'auto' : 'none';
+
+        // Subtitle (NEW)
+        if (heroSubtitle) {
+            heroSubtitle.style.opacity = subtitleAlpha;
+            // Slide up slightly
+            heroSubtitle.style.transform = `translateY(${(1 - subtitleAlpha) * 20 + 60}px)`;
+        }
 
         heroCta.style.opacity = ctaAlpha;
         heroCta.style.transform = `translateY(${(1 - ctaAlpha) * 20}px)`;
