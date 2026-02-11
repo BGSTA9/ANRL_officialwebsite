@@ -22,7 +22,7 @@ function renderNav(activePage) {
   nav.innerHTML = `
     <div class="nav__inner">
       <a href="index.html" class="nav__logo">
-        <img src="ANReLa.svg" alt="ANReLa" />
+        <img src="assets/ANReLa.svg" alt="ANReLa" />
         <span class="nav__logo-text">Argo Navis Research Laboratory</span>
       </a>
       <div class="nav__links" id="navLinks">
