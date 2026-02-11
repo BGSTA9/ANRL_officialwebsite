@@ -69,6 +69,7 @@ function renderNav(activePage) {
 }
 
 function renderFooter() {
+  if (!window.location.pathname.endsWith('join.html')) return;
   const footer = document.createElement('footer');
   footer.className = 'footer';
   footer.innerHTML = `
