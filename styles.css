@@ -255,7 +255,7 @@ textarea {
 
 .logo-hide {
   display: inline-block;
-  max-width: 200px;
+  max-width: 100px;
   opacity: 1;
   overflow: hidden;
   transition: max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
@@ -415,7 +415,7 @@ textarea {
 }
 
 .hero__emblem {
-  height: 648px;
+  height: 400px;
   width: auto;
   transform-origin: center center;
 }
@@ -447,6 +447,26 @@ textarea {
 
 .hero__single-title strong {
   font-weight: 700;
+}
+
+/* Subtitle below the single-line title */
+.hero__subtitle {
+  position: absolute;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  /* Smaller than title */
+  font-weight: 300;
+  color: var(--gray-400);
+  /* Slightly dimmer */
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0;
+  top: 55%;
+  /* Positioned below title (approx) - adjusted in JS or CSS */
+  opacity: 0;
+  white-space: nowrap;
 }
 
 /* CTA link */

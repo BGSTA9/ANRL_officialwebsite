@@ -29,8 +29,10 @@ function initScrollExperience(scrollDrive, canvas) {
     let w, h, dpr;
 
     // DOM elements
+    // DOM elements
     const phaseLogo = document.getElementById('phaselogo');
     const heroTitle = document.getElementById('heroTitle');
+    const heroSubtitle = document.getElementById('heroSubtitle'); // NEW
     const heroCta = document.getElementById('heroCta');
     const heroScroll = document.getElementById('heroScroll');
     const heroEmblem = document.getElementById('heroEmblem');
