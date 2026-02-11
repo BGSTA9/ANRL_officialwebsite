@@ -47,6 +47,7 @@ function initScrollExperience(scrollDrive, canvas) {
 
     // ── Image Asset ──
     const neuralImg = new Image();
+    neuralImg.crossOrigin = 'anonymous';
     neuralImg.src = 'assets/argoneural.png';
     let imageLoaded = false;
 
@@ -67,8 +68,7 @@ function initScrollExperience(scrollDrive, canvas) {
 
     neuralImg.onload = () => {
         imageLoaded = true;
-        resize();
-        draw();
+        resize(); // Re-scan features now that image is available
     };
 
     // ── Resizing & Feature Scanning ──
@@ -80,7 +80,7 @@ function initScrollExperience(scrollDrive, canvas) {
         canvas.height = h * dpr;
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
-        ctx.scale(dpr, dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         if (!imageLoaded) return;
 
@@ -96,7 +96,13 @@ function initScrollExperience(scrollDrive, canvas) {
         imgDrawX = (w - imgDrawW) / 2;
         imgDrawY = (h - imgDrawH) / 2;
 
-        scanFeatures();
+        try {
+            scanFeatures();
+        } catch (e) {
+            // getImageData may fail on file:// due to CORS — animation still renders base image
+            nodes = [];
+            paths = [];
+        }
     }
 
     // Scan the drawn image to find "Nodes" and "Paths"
@@ -203,7 +209,7 @@ function initScrollExperience(scrollDrive, canvas) {
 
         // Use effective progress: if locked, act as if we are fully "scrolled in" for the scene
         // We use 0.8 as the "full state" reference point where everything is visible
-        const p = isLocked ? 0.8 : scrollProgress;
+        const p = isLocked ? 1.0 : scrollProgress;
 
         // Phases & Opacities
         // Phase 1: Big Logo (always white)
@@ -322,6 +328,10 @@ function initScrollExperience(scrollDrive, canvas) {
     let resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100); });
 
+    // Start animation immediately — don't wait for neural image
+    resize();
+    draw();
+
     // Reset listener
     setTimeout(() => {
         const navLogo = document.querySelector('.nav__logo');
@@ -336,13 +346,7 @@ function initScrollExperience(scrollDrive, canvas) {
     }, 500);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const scrollDrive = document.getElementById('scrollDrive');
-    const heroCanvas = document.getElementById('heroCanvas');
-    if (scrollDrive && heroCanvas) {
-        initScrollExperience(scrollDrive, heroCanvas);
-    }
-});
+// (Removed duplicate DOMContentLoaded — initScrollExperience is already called above)
 
 
 

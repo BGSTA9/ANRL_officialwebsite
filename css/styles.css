@@ -1144,6 +1144,10 @@ textarea {
     font-size: clamp(2.2rem, 10vw, 3.5rem);
   }
 
+  .hero__emblem {
+    height: 200px;
+  }
+
   /* Grids collapse */
   .grid--2,
   .grid--3 {
