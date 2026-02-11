@@ -193,34 +193,58 @@ function initScrollExperience(scrollDrive, canvas) {
         const p = scrollProgress;
 
         // Phases & Opacities
-        const logoScale = p < 0.08 ? 1 : p < 0.12 ? 1 + 0.1 : 1.1;
-        const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.12 ? 1 - (p - 0.10) / 0.02 : 0;
+        // Phase 1: Big Logo (always white)
+        // Starts at opacity 1, fades out as we scroll
+        const logoPhaseAlpha = p < 0.10 ? 1 : Math.max(0, 1 - (p - 0.10) / 0.05);
+        const logoScale = 1 + p * 0.5; // Slight zoom out/in effect
 
-        // Transition: Logo fades out -> Neural fades in
-        // Network visibility starts at 0.10, full by 0.15
-        const networkAlpha = p < 0.10 ? 0 : p < 0.15 ? (p - 0.10) / 0.05 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
+        // Phase 2: Elements reveal
+        // 1. Neural Network (starts early)
+        const networkAlpha = p < 0.05 ? 0 : Math.min(1, (p - 0.05) / 0.10);
 
-        const titleAlpha = p < 0.20 ? 0 : p < 0.35 ? (p - 0.20) / 0.15 : 1;
-        const subtitleAlpha = p < 0.30 ? 0 : p < 0.45 ? (p - 0.30) / 0.15 : 1;
-        const ctaAlpha = p < 0.80 ? 0 : Math.min(1, (p - 0.80) / 0.15);
-        const scrollAlpha = p < 0.05 ? 1 : p < 0.10 ? 1 - (p - 0.05) / 0.05 : 0;
+        // 2. Navigation Bar (appears after network starts)
+        const navAlpha = p < 0.15 ? 0 : Math.min(1, (p - 0.15) / 0.10);
+
+        // 3. Title Text "Argo Navis..." (appears next)
+        const titleAlpha = p < 0.25 ? 0 : Math.min(1, (p - 0.25) / 0.10);
+        const titleY = (1 - titleAlpha) * 30;
+
+        // 4. Small Logo (appears ON TOP of title)
+        const smallLogoAlpha = p < 0.35 ? 0 : Math.min(1, (p - 0.35) / 0.10);
+        const smallLogoY = (1 - smallLogoAlpha) * 20 - 60; // Offset to start slightly higher
+
+        // 5. Motto "Research..." (keeps appearing last)
+        const subtitleAlpha = p < 0.45 ? 0 : Math.min(1, (p - 0.45) / 0.10);
+        const subtitleY = (1 - subtitleAlpha) * 20 + 50;
+
+        const ctaAlpha = p < 0.85 ? 0 : Math.min(1, (p - 0.85) / 0.15);
+        const scrollAlpha = p < 0.05 ? 1 : Math.max(0, 1 - p / 0.05);
 
         // Update DOM
         phaseLogo.style.opacity = logoPhaseAlpha;
         heroEmblem.style.transform = `scale(${logoScale})`;
         phaseLogo.style.pointerEvents = logoPhaseAlpha > 0.5 ? 'auto' : 'none';
 
+        // Small Logo
+        const smallLogo = document.getElementById('heroSmallLogo');
+        if (smallLogo) {
+            smallLogo.style.opacity = smallLogoAlpha;
+            smallLogo.style.transform = `translateY(${smallLogoY}px)`;
+        }
+
         heroTitle.style.opacity = titleAlpha;
-        heroTitle.style.transform = `translateY(${(1 - titleAlpha) * 25}px)`;
+        heroTitle.style.transform = `translateY(${titleY}px)`;
+
         heroSubtitle.style.opacity = subtitleAlpha;
-        heroSubtitle.style.transform = `translateY(${(1 - subtitleAlpha) * 20 + 60}px)`;
+        heroSubtitle.style.transform = `translateY(${subtitleY}px)`;
+
         heroCta.style.opacity = ctaAlpha;
         heroCta.style.transform = `translateY(${(1 - ctaAlpha) * 20}px)`;
+
         heroScroll.style.opacity = scrollAlpha;
 
         const nav = document.querySelector('.nav');
         if (nav) {
-            const navAlpha = p < 0.1 ? 0 : Math.min(1, (p - 0.1) * 5);
             nav.style.opacity = navAlpha;
             nav.style.pointerEvents = navAlpha > 0.1 ? 'auto' : 'none';
         }

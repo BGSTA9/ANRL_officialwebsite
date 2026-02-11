@@ -418,16 +418,25 @@ textarea {
   height: 400px;
   width: auto;
   transform-origin: center center;
+  filter: brightness(0) invert(1);
+  /* Ensure it's white */
+}
+
+/* Small logo that appears above title */
+.hero__small-logo {
+  position: absolute;
+  z-index: 2;
+  height: 60px;
+  width: auto;
+  top: 42%;
+  /* Positioned above title */
+  opacity: 0;
+  filter: brightness(0) invert(1);
 }
 
 .hero__brand {
-  font-family: var(--font-display);
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
-  font-weight: 300;
-  color: var(--white);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  opacity: 0;
+  display: none;
+  /* User wants only the logo initially */
 }
 
 /* Phase 3: Single-line title */
