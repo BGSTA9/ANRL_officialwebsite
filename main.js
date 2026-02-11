@@ -31,7 +31,7 @@ function initScrollExperience(scrollDrive, canvas) {
     // DOM elements
     const phaseLogo = document.getElementById('phaselogo');
     const heroTitle = document.getElementById('heroTitle');
-    const heroSubtitle = document.getElementById('heroSubtitle'); // NEW
+    const heroSubtitle = document.getElementById('heroSubtitle');
     const heroCta = document.getElementById('heroCta');
     const heroScroll = document.getElementById('heroScroll');
     const heroEmblem = document.getElementById('heroEmblem');
@@ -42,30 +42,35 @@ function initScrollExperience(scrollDrive, canvas) {
     let nodes = [];
     let connections = [];
     let pulses = [];
-    let logoParticles = []; // particles from dismantled logo
+    let logoParticles = [];
     let frameCount = 0;
-
-    // ── Logo center positions (calculated on resize) ──
     let logoCenterX, logoCenterY;
 
-    // ── Particle class for logo dismantle ──
+    // ── Particle class (with polyrhythmic flickering) ──
     class Particle {
         constructor(x, y) {
             this.originX = x;
             this.originY = y;
-            // Random target position for neural network spread
             this.targetX = Math.random() * w;
             this.targetY = Math.random() * h;
             this.x = x;
             this.y = y;
             this.radius = 1 + Math.random() * 2;
-            this.pulsePhase = Math.random() * Math.PI * 2;
+
+            // Polyrhythmic flicker: 3 overlapping sine waves at different frequencies
+            this.flickerFreq1 = 3.0 + Math.random() * 5.0;   // fast: 3–8 Hz
+            this.flickerFreq2 = 1.2 + Math.random() * 2.5;   // medium: 1.2–3.7 Hz
+            this.flickerFreq3 = 0.3 + Math.random() * 0.8;   // slow envelope: 0.3–1.1 Hz
+            this.flickerPhase1 = Math.random() * Math.PI * 2;
+            this.flickerPhase2 = Math.random() * Math.PI * 2;
+            this.flickerPhase3 = Math.random() * Math.PI * 2;
+
+            // Fired flash state
             this.glow = 0;
-            this.glowDecay = 0.02 + Math.random() * 0.02;
+            this.glowDecay = 0.12 + Math.random() * 0.08; // fast decay (3–5 frames)
         }
 
         update(progress) {
-            // progress: 0 = logo form, 1 = fully scattered
             const ease = easeInOutCubic(progress);
             this.x = this.originX + (this.targetX - this.originX) * ease;
             this.y = this.originY + (this.targetY - this.originY) * ease;
@@ -76,19 +81,32 @@ function initScrollExperience(scrollDrive, canvas) {
             this.glow = 1;
         }
 
-        draw(ctx, time, networkAlpha) {
-            const breathe = 0.5 + 0.5 * Math.sin(time * 0.8 + this.pulsePhase);
-            const alpha = (0.2 + this.glow * 0.6 + breathe * 0.15) * networkAlpha;
-            const r = this.radius + this.glow * 3;
+        // Compute the polyrhythmic flicker brightness [0..1]
+        getFlickerIntensity(time) {
+            const s1 = Math.sin(time * this.flickerFreq1 * Math.PI * 2 + this.flickerPhase1);
+            const s2 = Math.sin(time * this.flickerFreq2 * Math.PI * 2 + this.flickerPhase2);
+            const s3 = Math.sin(time * this.flickerFreq3 * Math.PI * 2 + this.flickerPhase3);
 
-            // Glow halo
-            if (this.glow > 0.1 && networkAlpha > 0.3) {
-                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 4);
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.glow * 0.3 * networkAlpha})`);
-                gradient.addColorStop(0.5, `rgba(255, 255, 255, ${this.glow * 0.08 * networkAlpha})`);
+            // Non-linear combination: threshold the product for sharp on/off
+            const combined = (s1 * 0.5 + 0.5) * (s2 * 0.4 + 0.6) * (s3 * 0.3 + 0.7);
+            // Sharp threshold: push toward binary flicker
+            return Math.pow(combined, 2.5);
+        }
+
+        draw(ctx, time, networkAlpha) {
+            const flicker = this.getFlickerIntensity(time);
+            const totalBrightness = Math.min(1, flicker * 0.35 + this.glow);
+            const alpha = (0.08 + totalBrightness * 0.7) * networkAlpha;
+            const r = this.radius + this.glow * 3.5 + flicker * 0.8;
+
+            // Glow halo when fired
+            if (this.glow > 0.15 && networkAlpha > 0.3) {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 5);
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.glow * 0.4 * networkAlpha})`);
+                gradient.addColorStop(0.4, `rgba(255, 255, 255, ${this.glow * 0.1 * networkAlpha})`);
                 gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, r * 4, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, r * 5, 0, Math.PI * 2);
                 ctx.fillStyle = gradient;
                 ctx.fill();
             }
@@ -101,126 +119,51 @@ function initScrollExperience(scrollDrive, canvas) {
         }
     }
 
-    // ── Pulse class ──
-    class Pulse {
+    // ── FlickerEvent class (instantaneous path blink, no trajectory) ──
+    class FlickerEvent {
         constructor(fromNode, toNode) {
             this.from = fromNode;
             this.to = toNode;
-            this.progress = 0;
-            this.life = 1; // 1 = alive/travelling, < 1 = fading out after arrival
-            this.speed = 0.02 + Math.random() * 0.01; // Slightly faster
-            this.state = 'travelling'; // 'travelling' or 'fading'
+            this.life = 1.0;         // starts at full brightness
+            this.decay = 0.15 + Math.random() * 0.15; // dies in ~3–5 frames
         }
 
         update() {
-            if (this.state === 'travelling') {
-                this.progress += this.speed;
-                if (this.progress >= 1) {
-                    this.progress = 1;
-                    this.state = 'fading';
-                    this.to.fire();
-                    // Chain reaction
-                    if (Math.random() < 0.4) { // Increased chain chance
-                        spawnPulsesFrom(this.to);
-                    }
-                }
-            } else {
-                // Fading out
-                this.life -= 0.03; // Fade speed
-            }
+            this.life -= this.decay;
         }
 
         draw(ctx, networkAlpha) {
             if (this.life <= 0 || networkAlpha < 0.01) return;
 
-            // Calculate curve points
-            const mx = (this.from.x + this.to.x) / 2 + (this.to.y - this.from.y) * 0.06;
-            const my = (this.from.y + this.to.y) / 2 - (this.to.x - this.from.x) * 0.06;
+            // Draw the ENTIRE path instantly — no interpolation/trajectory
+            const dx = this.to.x - this.from.x;
+            const dy = this.to.y - this.from.y;
+            const mx = (this.from.x + this.to.x) / 2 + dy * 0.06;
+            const my = (this.from.y + this.to.y) / 2 - dx * 0.06;
 
-            // Draw the full path if fading, or partial path if travelling
-            // Valid only if we can draw partial curves. 
-            // Simplified approach: Draw the full curve, but use a gradient or mask?
-            // Canvas path animation is tricky. 
-            // Better approximation: 
-            // If travelling, draw from Start to CurrentPos.
-            // If fading, draw Start to End with opacity = life.
+            const flashAlpha = this.life * networkAlpha;
 
-            const t = this.progress;
-
-            // Current tip position
-            const cx = (1 - t) * (1 - t) * this.from.x + 2 * (1 - t) * t * mx + t * t * this.to.x;
-            const cy = (1 - t) * (1 - t) * this.from.y + 2 * (1 - t) * t * my + t * t * this.to.y;
-
+            // Bright glow line
             ctx.beginPath();
             ctx.moveTo(this.from.x, this.from.y);
+            ctx.quadraticCurveTo(mx, my, this.to.x, this.to.y);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${flashAlpha * 0.9})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-            // We need to draw a quadratic curve from Start to Current(cx,cy)
-            // But a segment of a quad curve is not easily defined by just one control point.
-            // A simple approximation is fine for valid perception.
-            // Let's draw the full curve but clip it? No, expensive.
-            // Let's just draw lineTo for now? No, curves are nice.
-            // True sub-curve splitting is ideal but complex. 
-            // Approximation: Draw quad curve to (cx, cy) using an interpolated control point.
-
-            const subMx = (1 - t) * this.from.x + t * mx;
-            const subMy = (1 - t) * this.from.y + t * my;
-
-            // Actually, for visual speed, just drawing the full curve with a gradient opacity 
-            // masked by progress is the mostly "synapse" look. 
-            // But user said "nerve path is shown". So it should grow.
-
-            // Let's do the "trace" style: a path that grows.
-            // We will use standard quadraticCurveTo but stop at current T?
-            // Canvas doesn't support "draw only 50% of this curve".
-
-            // Workaround: Draw the pulses as "projectiles" leaving a trail?
-            // No, user wants the "path" to show.
-
-            // Approach: Interpolate a few points along the curve and connect them.
-            // 10 segments is enough smoothness.
-
-            const segments = Math.floor(10 * t);
-            if (segments > 0) {
+            // Softer wider halo for the path
+            if (flashAlpha > 0.3) {
                 ctx.beginPath();
                 ctx.moveTo(this.from.x, this.from.y);
-                for (let i = 1; i <= segments; i++) {
-                    const segT = (i / 10) * t; // Scale to current max progress? No, just use i/10 if t=1
-                    // Actually we want to draw from 0 to t.
-                    const loopT = (i / segments) * t;
-                    const lx = (1 - loopT) * (1 - loopT) * this.from.x + 2 * (1 - loopT) * loopT * mx + loopT * loopT * this.to.x;
-                    const ly = (1 - loopT) * (1 - loopT) * this.from.y + 2 * (1 - loopT) * loopT * my + loopT * loopT * this.to.y;
-                    ctx.lineTo(lx, ly);
-                }
-                // Connect to final tip
-                ctx.lineTo(cx, cy);
-
-                const alpha = this.life * networkAlpha * 0.8;
-                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.lineWidth = 1; // Thin nerve
+                ctx.quadraticCurveTo(mx, my, this.to.x, this.to.y);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${flashAlpha * 0.15})`;
+                ctx.lineWidth = 6;
                 ctx.stroke();
-            }
-
-            // Draw glowing head/spark if travelling or just arrived
-            if (this.state === 'travelling' || this.life > 0.8) {
-                const headAlpha = this.life * networkAlpha;
-                ctx.beginPath();
-                ctx.arc(cx, cy, 2, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${headAlpha})`;
-                ctx.fill();
-
-                // Glow
-                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 8);
-                g.addColorStop(0, `rgba(255, 255, 255, ${headAlpha})`);
-                g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                ctx.beginPath();
-                ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-                ctx.fillStyle = g;
-                ctx.fill();
             }
         }
     }
 
-    function spawnPulsesFrom(node) {
+    function spawnFlickersFrom(node) {
         const nearby = logoParticles.filter(p => {
             if (p === node) return false;
             const dx = p.x - node.x;
@@ -228,27 +171,32 @@ function initScrollExperience(scrollDrive, canvas) {
             return Math.sqrt(dx * dx + dy * dy) < CONNECTION_DIST;
         });
         if (nearby.length === 0) return;
-        // Increase number of pulses per spawn
+
         const count = Math.min(nearby.length, 1 + Math.floor(Math.random() * 3));
         const shuffled = nearby.sort(() => Math.random() - 0.5);
         for (let i = 0; i < count; i++) {
-            pulses.push(new Pulse(node, shuffled[i]));
+            shuffled[i].fire(); // destination node also flashes
+            pulses.push(new FlickerEvent(node, shuffled[i]));
+
+            // Cascading burst: ~40% chance the destination fires onward
+            if (Math.random() < 0.4) {
+                setTimeout(() => {
+                    shuffled[i].fire();
+                    spawnFlickersFrom(shuffled[i]);
+                }, 16 + Math.random() * 48); // 1–3 frames later
+            }
         }
     }
 
-    // ── Easing ──
     function easeInOutCubic(t) {
         return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
-    // ── Initialize particles around logo center ──
     function initParticles() {
         logoParticles = [];
         logoCenterX = w / 2;
         logoCenterY = h / 2;
-
         for (let i = 0; i < NODE_COUNT; i++) {
-            // Start particles clustered around logo center (within ~80px radius)
             const angle = Math.random() * Math.PI * 2;
             const radius = Math.random() * 80;
             const x = logoCenterX + Math.cos(angle) * radius;
@@ -258,7 +206,6 @@ function initScrollExperience(scrollDrive, canvas) {
         pulses = [];
     }
 
-    // ── Resize ──
     function resize() {
         dpr = window.devicePixelRatio || 1;
         w = canvas.parentElement.clientWidth;
@@ -271,7 +218,6 @@ function initScrollExperience(scrollDrive, canvas) {
         initParticles();
     }
 
-    // ── Scroll progress ──
     let scrollProgress = 0;
     function updateScroll() {
         const scrollTop = window.scrollY;
@@ -288,63 +234,30 @@ function initScrollExperience(scrollDrive, canvas) {
 
         const p = scrollProgress;
 
-        // ── Phase control ──
-        /*
-          0.00 - 0.10  Phase 0: White logo, huge
-          0.10 - 0.12  Phase 1: Splash/Explosion (very fast 2% scroll)
-          0.10 - 0.90  Phase 2: Neural network active & full screen (immediate)
-          0.20 - 0.50  Phase 3: "Argo Navis..." title fades in
-          0.30 - 0.60  Phase 4: "Research, Simulate..." subtitle fades in
-          0.80 - 1.00  Phase 5: CTA fades in
-        */
-
-        // Logo scale: slight grow
+        // Phases
         const logoScale = p < 0.08 ? 1 : p < 0.12 ? 1 + 0.1 : 1.1;
-
-        // Logo phase opacity: 1 until 0.10, then gone by 0.12.
         const logoPhaseAlpha = p < 0.10 ? 1 : p < 0.12 ? 1 - (p - 0.10) / 0.02 : 0;
-
-        // Particle scatter (Explosion): starts at 0.10, ends at 0.12 (instant splash)
         const scatterProgress = p < 0.10 ? 0 : p < 0.12 ? (p - 0.10) / 0.02 : 1;
-
-        // Network visibility: overlaps logo fade. Starts 0.10, full by 0.12.
         const networkAlpha = p < 0.10 ? 0 : p < 0.12 ? (p - 0.10) / 0.02 : p < 0.90 ? 1 : 1 - (p - 0.90) / 0.10;
-
-        // Single-line title opacity (fades in 0.20-0.35 — EARLIER/FASTER)
         const titleAlpha = p < 0.20 ? 0 : p < 0.35 ? (p - 0.20) / 0.15 : 1;
-
-        // Subtitle opacity (0.30-0.45) - appears after title
         const subtitleAlpha = p < 0.30 ? 0 : p < 0.45 ? (p - 0.30) / 0.15 : 1;
-
-        // CTA opacity (fades in 0.80-0.95)
         const ctaAlpha = p < 0.80 ? 0 : Math.min(1, (p - 0.80) / 0.15);
-
-        // Scroll indicator opacity
         const scrollAlpha = p < 0.05 ? 1 : p < 0.10 ? 1 - (p - 0.05) / 0.05 : 0;
 
-        // ── Apply DOM elements ──
-
-        // Logo
+        // DOM Updates
         phaseLogo.style.opacity = logoPhaseAlpha;
         heroEmblem.style.transform = `scale(${logoScale})`;
-        // Pure white logo
         heroEmblem.style.filter = `brightness(0) invert(1)`;
-
         phaseLogo.style.pointerEvents = logoPhaseAlpha > 0.5 ? 'auto' : 'none';
-        // Hide brand text in the hero logo phase
         const brandEl = phaseLogo.querySelector('.hero__brand');
-        if (brandEl) brandEl.style.opacity = 0;
-        if (brandEl) brandEl.style.display = 'none';
+        if (brandEl) { brandEl.style.opacity = 0; brandEl.style.display = 'none'; }
 
-        // Title
         heroTitle.style.opacity = titleAlpha;
         heroTitle.style.transform = `translateY(${(1 - titleAlpha) * 25}px)`;
         heroTitle.style.pointerEvents = titleAlpha > 0.5 ? 'auto' : 'none';
 
-        // Subtitle (NEW)
         if (heroSubtitle) {
             heroSubtitle.style.opacity = subtitleAlpha;
-            // Slide up slightly
             heroSubtitle.style.transform = `translateY(${(1 - subtitleAlpha) * 20 + 60}px)`;
         }
 
@@ -354,26 +267,19 @@ function initScrollExperience(scrollDrive, canvas) {
 
         heroScroll.style.opacity = scrollAlpha;
 
-        // ── Navbar fade: fade out the logo text on scroll ──
         const navLogoText = document.querySelector('.nav__logo-text');
         if (navLogoText) {
             const navFade = p < 0.03 ? 1 : p < 0.12 ? 1 - (p - 0.03) / 0.09 : 0;
             navLogoText.style.opacity = navFade;
         }
 
-        // ── Canvas: vignette ──
-        // (handled by CSS ::before)
-
-        // ── Canvas: Update particles ──
         for (const p of logoParticles) {
             p.update(scatterProgress);
         }
 
-        // ── Canvas: Draw connections ──
+        // Connections (static background network at low opacity)
         if (networkAlpha > 0.05) {
-            // Static background transparency: 80% transparent => 20% opacity (0.2)
             const connectionAlpha = 0.2 * networkAlpha;
-
             for (let i = 0; i < logoParticles.length; i++) {
                 for (let j = i + 1; j < logoParticles.length; j++) {
                     const a = logoParticles[i];
@@ -383,7 +289,7 @@ function initScrollExperience(scrollDrive, canvas) {
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < CONNECTION_DIST) {
                         const alpha = Math.max(0, connectionAlpha * (1 - dist / CONNECTION_DIST));
-                        if (alpha > 0.005) { // Optimization: don't draw extremely faint lines
+                        if (alpha > 0.01) {
                             ctx.beginPath();
                             ctx.moveTo(a.x, a.y);
                             const mx = (a.x + b.x) / 2 + dy * 0.04;
@@ -398,7 +304,7 @@ function initScrollExperience(scrollDrive, canvas) {
             }
         }
 
-        // ── Canvas: Draw particles ──
+        // Particles (with polyrhythmic flickering)
         const particleAlpha = scatterProgress > 0.05 ? Math.min(1, scatterProgress * 2) : 0;
         if (particleAlpha > 0) {
             for (const p of logoParticles) {
@@ -406,59 +312,45 @@ function initScrollExperience(scrollDrive, canvas) {
             }
         }
 
-        // ── Canvas: Fire pulses (only when network is visible) — MANY ──
-        if (networkAlpha > 0.3 && frameCount % 6 === 0) { // Increased frequency (was 12)
-            // Fire from 3-5 random nodes each cycle
-            const burstCount = 3 + Math.floor(Math.random() * 3);
-            for (let b = 0; b < burstCount; b++) {
-                const randomNode = logoParticles[Math.floor(Math.random() * logoParticles.length)];
-                randomNode.fire();
-                spawnPulsesFrom(randomNode);
+        // Fire rapid flickering events — high frequency, multiple per frame
+        if (networkAlpha > 0.3) {
+            // Fire 3–5 events every 2 frames for dense, rapid flickering
+            if (frameCount % 2 === 0) {
+                const burstCount = 3 + Math.floor(Math.random() * 3);
+                for (let b = 0; b < burstCount; b++) {
+                    const randomNode = logoParticles[Math.floor(Math.random() * logoParticles.length)];
+                    randomNode.fire();
+                    spawnFlickersFrom(randomNode);
+                }
             }
         }
 
-        // ── Canvas: Update and draw pulses ──
+        // Draw flicker events (instantaneous path blinks)
         for (const pulse of pulses) {
             pulse.update();
             pulse.draw(ctx, networkAlpha);
         }
-        pulses = pulses.filter(p => p.life > 0); // Filter by life instead of alive boolean
-        if (pulses.length > 200) pulses = pulses.slice(-150);
+        pulses = pulses.filter(p => p.life > 0);
+        if (pulses.length > 200) pulses = pulses.slice(-160);
 
         requestAnimationFrame(draw);
     }
 
-    // ── Events ──
     resize();
-
     window.addEventListener('scroll', updateScroll, { passive: true });
     updateScroll();
-
     let resizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(resize, 150);
-    });
-
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 150); });
     draw();
 }
 
-/* ============================================================
-   CONTACT FORM
-   ============================================================ */
 function initContactForm(form) {
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-
         const name = form.querySelector('#name').value.trim();
         const email = form.querySelector('#email').value.trim();
         const message = form.querySelector('#message').value.trim();
-
-        if (!name || !email || !message) {
-            return;
-        }
-
-        // Mailto fallback
+        if (!name || !email || !message) return;
         const subject = encodeURIComponent(`Research Inquiry from ${name}`);
         const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
         window.location.href = `mailto:contact@argonavis-research.org?subject=${subject}&body=${body}`;
