@@ -371,8 +371,8 @@ function initScrollExperience(scrollDrive, canvas) {
 
         // ── Canvas: Draw connections ──
         if (networkAlpha > 0.05) {
-            // Keep static connections VERY faint or basically invisible
-            const connectionAlpha = 0.03 * networkAlpha; // Reduced from 0.06
+            // Static background transparency: 80% transparent => 20% opacity (0.2)
+            const connectionAlpha = 0.2 * networkAlpha;
 
             for (let i = 0; i < logoParticles.length; i++) {
                 for (let j = i + 1; j < logoParticles.length; j++) {
