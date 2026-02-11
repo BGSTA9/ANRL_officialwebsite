@@ -1168,9 +1168,10 @@ textarea {
 .story-header-image {
   display: flex;
   justify-content: flex-end;
-  /* Cinematic look: white and visible */
-  opacity: 0.8;
-  filter: brightness(0) invert(1);
+  /* Cinematic look: semi-transparent white */
+  opacity: 0.5;
+  filter: invert(1);
+  mix-blend-mode: screen;
   pointer-events: none;
   user-select: none;
 }
