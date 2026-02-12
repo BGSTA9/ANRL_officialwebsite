@@ -352,14 +352,36 @@ function initScrollExperience(scrollDrive, canvas) {
 
 
 function initContactForm(form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = form.querySelector('#name').value.trim();
         const email = form.querySelector('#email').value.trim();
         const message = form.querySelector('#message').value.trim();
         if (!name || !email || !message) return;
-        const subject = encodeURIComponent(`Research Inquiry from ${name}`);
-        const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
-        window.location.href = `mailto:contact@argonavis-research.org?subject=${subject}&body=${body}`;
+
+        const submitBtn = form.querySelector('.form-submit');
+        submitBtn.textContent = 'Sending…';
+        submitBtn.disabled = true;
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(formData).toString()
+            });
+
+            if (response.ok) {
+                form.style.display = 'none';
+                const successEl = document.getElementById('formSuccess');
+                if (successEl) successEl.style.display = 'block';
+            } else {
+                throw new Error('Form submission failed');
+            }
+        } catch (err) {
+            submitBtn.textContent = 'Send Message';
+            submitBtn.disabled = false;
+            alert('Something went wrong. Please email us directly at contact@argonavis-research.org');
+        }
     });
 }

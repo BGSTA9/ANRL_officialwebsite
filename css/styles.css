@@ -958,6 +958,24 @@ textarea {
   transform: translateY(0);
 }
 
+.form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-success {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+}
+
+.form-success p {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
 .form-fallback {
   text-align: center;
   margin-top: var(--space-md);
