@@ -364,11 +364,16 @@ function initContactForm(form) {
         submitBtn.disabled = true;
 
         try {
-            const formData = new FormData(form);
-            const response = await fetch('/', {
+            const formData = new URLSearchParams();
+            formData.append('form-name', 'contact');
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('message', message);
+
+            const response = await fetch('/join.html', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams(formData).toString()
+                body: formData.toString()
             });
 
             if (response.ok) {
@@ -376,7 +381,7 @@ function initContactForm(form) {
                 const successEl = document.getElementById('formSuccess');
                 if (successEl) successEl.style.display = 'block';
             } else {
-                throw new Error('Form submission failed');
+                throw new Error('Server returned ' + response.status);
             }
         } catch (err) {
             submitBtn.textContent = 'Send Message';
