@@ -28,7 +28,7 @@ content="Our research methodology: high-fidelity simulation, deep neural network
   filter: grayscale(0%) brightness(1);
 }
 
-/* shared canvas card slot */
+/* shared canvas wrapper */
 .sim-wrap {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -41,6 +41,19 @@ content="Our research methodology: high-fidelity simulation, deep neural network
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* bridge canvas — spans all three cards */
+.methodology-vis {
+  position: relative;
+}
+#bridgeCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
 }
 </style>
 </head>
@@ -63,7 +76,10 @@ content="Our research methodology: high-fidelity simulation, deep neural network
   <section class="section section--border-top">
     <div class="container">
       <span class="section__label fade-up">Methodology</span>
-      <div class="grid grid--3">
+
+      <!-- wrapper that holds bridge canvas + the 3 cards -->
+      <div class="grid grid--3 methodology-vis" id="methodologyGrid">
+        <canvas id="bridgeCanvas"></canvas>
 
         <!-- SIMULATION -->
         <div class="card fade-up fade-up-delay-1">
@@ -87,10 +103,8 @@ content="Our research methodology: high-fidelity simulation, deep neural network
 
         <!-- GEOMETRIC INSIGHT -->
         <div class="card fade-up fade-up-delay-3">
-          <div class="card__image-wrap">
-            <img class="card__image"
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Coordinate_systems_for_Laplace_equation.svg/640px-Coordinate_systems_for_Laplace_equation.svg.png"
-              alt="Geometric insight into data distributions" loading="lazy" />
+          <div class="sim-wrap">
+            <canvas id="geoCanvas"></canvas>
           </div>
           <h3 class="card__title">GEOMETRIC INSIGHT</h3>
           <p class="card__text">Our process transforms raw computational observation into mathematical truth, interrogating our
@@ -130,90 +144,71 @@ content="Our research methodology: high-fidelity simulation, deep neural network
 <script>
 (function () {
   const canvas = document.getElementById('surfaceCanvas');
-  const ctx    = canvas.getContext('2d');
-  const wrap   = canvas.parentElement;
-
+  const ctx = canvas.getContext('2d');
+  const wrap = canvas.parentElement;
   let W, H;
   function resize() { W = canvas.width = wrap.clientWidth; H = canvas.height = wrap.clientHeight; }
-  resize();
-  new ResizeObserver(resize).observe(wrap);
+  resize(); new ResizeObserver(resize).observe(wrap);
 
   const RX = 0.50, RZ = -0.58, GRID = 40;
-
   const MODES = [
-    { kx: 2.000, ky: 0.000, speed: 1.400, ph: 0.00 },
-    { kx: 0.000, ky: 2.000, speed: 1.732, ph: 1.10 },
-    { kx: 2.000, ky: 2.000, speed: 1.000, ph: 2.30 },
-    { kx: 3.000, ky: 1.000, speed: 2.236, ph: 0.70 },
-    { kx: 1.000, ky: 3.000, speed: 1.618, ph: 3.50 },
-    { kx: 3.618, ky: 2.000, speed: 2.646, ph: 1.90 },
-    { kx: 1.414, ky: 3.618, speed: 1.414, ph: 4.10 },
-    { kx: 4.000, ky: 1.732, speed: 3.141, ph: 2.70 },
+    { kx:2.000, ky:0.000, speed:1.400, ph:0.00 },
+    { kx:0.000, ky:2.000, speed:1.732, ph:1.10 },
+    { kx:2.000, ky:2.000, speed:1.000, ph:2.30 },
+    { kx:3.000, ky:1.000, speed:2.236, ph:0.70 },
+    { kx:1.000, ky:3.000, speed:1.618, ph:3.50 },
+    { kx:3.618, ky:2.000, speed:2.646, ph:1.90 },
+    { kx:1.414, ky:3.618, speed:1.414, ph:4.10 },
+    { kx:4.000, ky:1.732, speed:3.141, ph:2.70 },
   ];
-  const AMPS = [0.28, 0.22, 0.18, 0.14, 0.11, 0.09, 0.07, 0.05];
+  const AMPS = [0.28,0.22,0.18,0.14,0.11,0.09,0.07,0.05];
 
   function waveZ(nx, ny, t) {
     let z = 0;
     for (let i = 0; i < MODES.length; i++) {
       const { kx, ky, speed, ph } = MODES[i];
-      z += AMPS[i] * Math.sin(kx * Math.PI * nx + ky * Math.PI * ny + speed * t + ph);
+      z += AMPS[i] * Math.sin(kx*Math.PI*nx + ky*Math.PI*ny + speed*t + ph);
     }
     return z;
   }
-
   function project(x, y, z) {
-    const x1 = x * Math.cos(RZ) - y * Math.sin(RZ);
-    const y1 = x * Math.sin(RZ) + y * Math.cos(RZ);
-    const y2 = y1 * Math.cos(RX) - z * Math.sin(RX);
-    const z2 = y1 * Math.sin(RX) + z * Math.cos(RX);
-    const sc = Math.min(W, H) * 0.43;
-    return { sx: W / 2 + x1 * sc, sy: H / 2 - y2 * sc * 0.54, sz: z2 };
+    const x1 = x*Math.cos(RZ) - y*Math.sin(RZ);
+    const y1 = x*Math.sin(RZ) + y*Math.cos(RZ);
+    const y2 = y1*Math.cos(RX) - z*Math.sin(RX);
+    const z2 = y1*Math.sin(RX) + z*Math.cos(RX);
+    const sc = Math.min(W,H)*0.43;
+    return { sx: W/2 + x1*sc, sy: H/2 - y2*sc*0.54, sz: z2 };
   }
-
   function draw(t) {
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0,0,W,H);
     const pts = [];
     for (let j = 0; j <= GRID; j++) {
       const row = [];
       for (let i = 0; i <= GRID; i++) {
-        const nx = (i / GRID) * 2 - 1;
-        const ny = (j / GRID) * 2 - 1;
-        row.push(project(nx, ny, waveZ(nx, ny, t)));
+        const nx = (i/GRID)*2-1, ny = (j/GRID)*2-1;
+        row.push(project(nx, ny, waveZ(nx,ny,t)));
       }
       pts.push(row);
     }
     const quads = [];
-    for (let j = 0; j < GRID; j++) {
+    for (let j = 0; j < GRID; j++)
       for (let i = 0; i < GRID; i++) {
-        const p00 = pts[j][i], p10 = pts[j][i+1];
-        const p01 = pts[j+1][i], p11 = pts[j+1][i+1];
-        const sz = (p00.sz + p10.sz + p01.sz + p11.sz) / 4;
-        quads.push({ p00, p10, p01, p11, sz });
+        const p00=pts[j][i], p10=pts[j][i+1], p01=pts[j+1][i], p11=pts[j+1][i+1];
+        quads.push({ p00,p10,p01,p11, sz:(p00.sz+p10.sz+p01.sz+p11.sz)/4 });
       }
-    }
-    quads.sort((a, b) => a.sz - b.sz);
-    quads.forEach(({ p00, p10, p01, p11, sz }) => {
-      const depth = Math.max(0, Math.min(1, (sz + 0.6) / 1.15));
+    quads.sort((a,b)=>a.sz-b.sz);
+    quads.forEach(({ p00,p10,p01,p11,sz }) => {
+      const d = Math.max(0, Math.min(1,(sz+0.6)/1.15));
       ctx.beginPath();
-      ctx.moveTo(p00.sx, p00.sy);
-      ctx.lineTo(p10.sx, p10.sy);
-      ctx.lineTo(p11.sx, p11.sy);
-      ctx.lineTo(p01.sx, p01.sy);
+      ctx.moveTo(p00.sx,p00.sy); ctx.lineTo(p10.sx,p10.sy);
+      ctx.lineTo(p11.sx,p11.sy); ctx.lineTo(p01.sx,p01.sy);
       ctx.closePath();
-      ctx.fillStyle = `rgba(255,255,255,${depth * 0.08})`;
-      ctx.fill();
-      ctx.strokeStyle = `rgba(255,255,255,${0.18 + depth * 0.55})`;
-      ctx.lineWidth = 0.55;
-      ctx.stroke();
+      ctx.fillStyle   = `rgba(255,255,255,${d*0.08})`;   ctx.fill();
+      ctx.strokeStyle = `rgba(255,255,255,${0.18+d*0.55})`; ctx.lineWidth=0.55; ctx.stroke();
     });
   }
-
-  let t0 = null;
-  function frame(now) {
-    if (!t0) t0 = now;
-    draw((now - t0) / 1000);
-    requestAnimationFrame(frame);
-  }
+  let t0=null;
+  function frame(now){ if(!t0)t0=now; draw((now-t0)/1000); requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
 })();
 </script>
@@ -224,155 +219,320 @@ content="Our research methodology: high-fidelity simulation, deep neural network
 <script>
 (function () {
   const canvas = document.getElementById('neuralCanvas');
-  const ctx    = canvas.getContext('2d');
-  const wrap   = canvas.parentElement;
+  const ctx = canvas.getContext('2d');
+  const wrap = canvas.parentElement;
+  let W, H;
+  function resize() { W=canvas.width=wrap.clientWidth; H=canvas.height=wrap.clientHeight; }
+  resize(); new ResizeObserver(resize).observe(wrap);
 
-  let W, H, CX, CY, R;
-  function resize() {
-    W = canvas.width  = wrap.clientWidth;
-    H = canvas.height = wrap.clientHeight;
-    CX = W / 2; CY = H / 2;
-    R  = Math.min(W, H) * 0.19;   /* orb radius */
-  }
-  resize();
-  new ResizeObserver(resize).observe(wrap);
-
-  /* ── Particles ── */
-  const N_ORB    = 220;   /* on the ring */
-  const N_TENDRILS = 55;  /* long filaments */
-  const N_SCATTER  = 80;  /* loose background sparks */
-
-  /* Ring particles — sit on / near the glowing circle */
-  const orbPts = Array.from({ length: N_ORB }, (_, i) => {
-    const baseAngle = (i / N_ORB) * Math.PI * 2;
-    const jitter    = (Math.random() - 0.5) * 0.55;   /* angular scatter */
-    const rJitter   = (Math.random() - 0.5) * 0.28;   /* radial scatter */
-    return {
-      baseAngle,
-      angle:  baseAngle + jitter,
-      rFrac:  1 + rJitter,          /* 1 = on ring, <1 inside, >1 outside */
-      speed:  (Math.random() - 0.5) * 0.28,
-      size:   0.6 + Math.random() * 1.4,
-      alpha:  0.5 + Math.random() * 0.5,
-    };
+  const N_ORB=220, N_TENDRILS=55, N_SCATTER=80;
+  const orbPts = Array.from({length:N_ORB},(_,i)=>{
+    const ba=(i/N_ORB)*Math.PI*2, jit=(Math.random()-0.5)*0.55;
+    return { baseAngle:ba, angle:ba+jit, rFrac:1+(Math.random()-0.5)*0.28,
+             speed:(Math.random()-0.5)*0.28, size:0.6+Math.random()*1.4, alpha:0.5+Math.random()*0.5 };
   });
-
-  /* Tendril particles — long curling filaments that radiate outward */
-  const tendrils = Array.from({ length: N_TENDRILS }, () => {
-    const startAngle = Math.random() * Math.PI * 2;
-    const len        = 0.55 + Math.random() * 1.3;   /* length as multiple of R */
-    const curl       = (Math.random() - 0.5) * 2.8;  /* how much it curves */
-    const segs       = 18 + Math.floor(Math.random() * 22);
-    return { startAngle, len, curl, segs, speed: (Math.random() - 0.5) * 0.12 };
-  });
-
-  /* Scatter sparks */
-  const sparks = Array.from({ length: N_SCATTER }, () => {
-    const angle = Math.random() * Math.PI * 2;
-    const dist  = R * (0.3 + Math.random() * 2.4);
-    return {
-      x:     CX + Math.cos(angle) * dist,
-      y:     CY + Math.sin(angle) * dist,
-      size:  0.4 + Math.random() * 1.1,
-      alpha: 0.1 + Math.random() * 0.35,
-      drift: { x: (Math.random() - 0.5) * 0.25, y: (Math.random() - 0.5) * 0.25 },
-    };
+  const tendrils = Array.from({length:N_TENDRILS},()=>({
+    startAngle:Math.random()*Math.PI*2, len:0.55+Math.random()*1.3,
+    curl:(Math.random()-0.5)*2.8, segs:18+Math.floor(Math.random()*22),
+    speed:(Math.random()-0.5)*0.12
+  }));
+  const sparks = Array.from({length:N_SCATTER},()=>{
+    const a=Math.random()*Math.PI*2, d=0;
+    return { angle:a, dist:0, size:0.4+Math.random()*1.1, alpha:0.1+Math.random()*0.35,
+             drift:{x:(Math.random()-0.5)*0.25, y:(Math.random()-0.5)*0.25}, x:0, y:0 };
   });
 
   function draw(t) {
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2, cy=H/2, r=Math.min(W,H)*0.19;
 
-    const cx = W / 2, cy = H / 2;
-    const r  = Math.min(W, H) * 0.19;
+    // init sparks positions once
+    sparks.forEach(sp=>{
+      if(!sp.init){ const a=Math.random()*Math.PI*2, d=r*(0.3+Math.random()*2.4);
+        sp.x=cx+Math.cos(a)*d; sp.y=cy+Math.sin(a)*d; sp.init=true; }
+    });
 
-    /* ── Glow core ── */
-    const grd = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.05);
-    grd.addColorStop(0,   'rgba(255,255,255,0.22)');
+    const grd=ctx.createRadialGradient(cx,cy,r*0.2,cx,cy,r*1.05);
+    grd.addColorStop(0,'rgba(255,255,255,0.22)');
     grd.addColorStop(0.45,'rgba(255,255,255,0.10)');
-    grd.addColorStop(1,   'rgba(255,255,255,0.00)');
-    ctx.beginPath();
-    ctx.arc(cx, cy, r * 1.05, 0, Math.PI * 2);
-    ctx.fillStyle = grd;
-    ctx.fill();
+    grd.addColorStop(1,'rgba(255,255,255,0.00)');
+    ctx.beginPath(); ctx.arc(cx,cy,r*1.05,0,Math.PI*2);
+    ctx.fillStyle=grd; ctx.fill();
 
-    /* ── Tendrils ── */
-    tendrils.forEach(td => {
-      const angle0 = td.startAngle + td.speed * t;
+    tendrils.forEach(td=>{
+      const a0=td.startAngle+td.speed*t;
       ctx.beginPath();
-      for (let s = 0; s <= td.segs; s++) {
-        const frac   = s / td.segs;
-        const curAngle = angle0 + td.curl * frac * 0.6;
-        const dist   = r * (1 + frac * td.len);
-        const px     = cx + Math.cos(curAngle) * dist;
-        const py     = cy + Math.sin(curAngle) * dist;
-        const wiggle = Math.sin(frac * 7 + t * 1.8 + td.startAngle) * r * 0.06;
-        const perpX  = -Math.sin(curAngle) * wiggle;
-        const perpY  =  Math.cos(curAngle) * wiggle;
-        s === 0 ? ctx.moveTo(px + perpX, py + perpY)
-                : ctx.lineTo(px + perpX, py + perpY);
+      for(let s=0;s<=td.segs;s++){
+        const f=s/td.segs, ca=a0+td.curl*f*0.6, dist=r*(1+f*td.len);
+        const px=cx+Math.cos(ca)*dist, py=cy+Math.sin(ca)*dist;
+        const wig=Math.sin(f*7+t*1.8+td.startAngle)*r*0.06;
+        const wpx=-Math.sin(ca)*wig, wpy=Math.cos(ca)*wig;
+        s===0?ctx.moveTo(px+wpx,py+wpy):ctx.lineTo(px+wpx,py+wpy);
       }
-      const alpha = 0.08 + 0.12 * Math.abs(Math.sin(td.startAngle + t * 0.3));
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-      ctx.lineWidth   = 0.5 + Math.random() * 0.4;
-      ctx.stroke();
+      ctx.strokeStyle=`rgba(255,255,255,${0.08+0.12*Math.abs(Math.sin(td.startAngle+t*0.3))})`;
+      ctx.lineWidth=0.5+Math.random()*0.4; ctx.stroke();
     });
 
-    /* ── Ring particles ── */
-    orbPts.forEach(p => {
-      const a  = p.angle + p.speed * t * 0.18;
-      const rr = r * p.rFrac;
-      const px = cx + Math.cos(a) * rr;
-      const py = cy + Math.sin(a) * rr;
-      /* proximity to ring edge → brighter */
-      const glow = ctx.createRadialGradient(px, py, 0, px, py, p.size * 2.5);
-      glow.addColorStop(0, `rgba(255,255,255,${p.alpha})`);
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.beginPath();
-      ctx.arc(px, py, p.size * 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = glow;
-      ctx.fill();
+    orbPts.forEach(p=>{
+      const a=p.angle+p.speed*t*0.18, rr=r*p.rFrac;
+      const px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr;
+      const g=ctx.createRadialGradient(px,py,0,px,py,p.size*2.5);
+      g.addColorStop(0,`rgba(255,255,255,${p.alpha})`); g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(px,py,p.size*2.5,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
     });
 
-    /* ── Scatter sparks (slowly drift) ── */
-    sparks.forEach(sp => {
-      sp.x += sp.drift.x;
-      sp.y += sp.drift.y;
-      /* soft wrap */
-      if (sp.x < 0) sp.x = W; if (sp.x > W) sp.x = 0;
-      if (sp.y < 0) sp.y = H; if (sp.y > H) sp.y = 0;
-      ctx.beginPath();
-      ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${sp.alpha})`;
-      ctx.fill();
+    sparks.forEach(sp=>{
+      sp.x+=sp.drift.x; sp.y+=sp.drift.y;
+      if(sp.x<0)sp.x=W; if(sp.x>W)sp.x=0;
+      if(sp.y<0)sp.y=H; if(sp.y>H)sp.y=0;
+      ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${sp.alpha})`; ctx.fill();
     });
 
-    /* ── Hard ring edge ── */
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.lineWidth   = 1.2;
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1.2; ctx.stroke();
 
-    /* ── Inner cluster density ── */
-    for (let k = 0; k < 6; k++) {
-      const ka = (k / 6) * Math.PI * 2 + t * 0.08;
-      const kr = r * (0.2 + 0.5 * Math.random());
-      const kx = cx + Math.cos(ka) * kr * 0.7;
-      const ky = cy + Math.sin(ka) * kr * 0.55;
-      const kg = ctx.createRadialGradient(kx, ky, 0, kx, ky, r * 0.22);
-      kg.addColorStop(0, 'rgba(255,255,255,0.12)');
-      kg.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.beginPath();
-      ctx.arc(kx, ky, r * 0.22, 0, Math.PI * 2);
-      ctx.fillStyle = kg;
-      ctx.fill();
+    for(let k=0;k<6;k++){
+      const ka=(k/6)*Math.PI*2+t*0.08, kr=r*(0.2+0.5*Math.random());
+      const kx=cx+Math.cos(ka)*kr*0.7, ky=cy+Math.sin(ka)*kr*0.55;
+      const kg=ctx.createRadialGradient(kx,ky,0,kx,ky,r*0.22);
+      kg.addColorStop(0,'rgba(255,255,255,0.12)'); kg.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(kx,ky,r*0.22,0,Math.PI*2); ctx.fillStyle=kg; ctx.fill();
     }
   }
+  let t0=null;
+  function frame(now){ if(!t0)t0=now; draw((now-t0)/1000); requestAnimationFrame(frame); }
+  requestAnimationFrame(frame);
+})();
+</script>
 
-  let t0 = null;
+<!-- ═══════════════════════════════════════
+     GEOMETRIC INSIGHT — rotating icosahedron
+═══════════════════════════════════════ -->
+<script>
+(function () {
+  const canvas = document.getElementById('geoCanvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = canvas.parentElement;
+  let W, H;
+  function resize() { W=canvas.width=wrap.clientWidth; H=canvas.height=wrap.clientHeight; }
+  resize(); new ResizeObserver(resize).observe(wrap);
+
+  /* Icosahedron vertices (unit sphere) */
+  const PHI = (1 + Math.sqrt(5)) / 2;
+  const RAW_VERTS = [
+    [-1, PHI,0],[1,PHI,0],[-1,-PHI,0],[1,-PHI,0],
+    [0,-1,PHI],[0,1,PHI],[0,-1,-PHI],[0,1,-PHI],
+    [PHI,0,-1],[PHI,0,1],[-PHI,0,-1],[-PHI,0,1]
+  ].map(([x,y,z])=>{ const l=Math.sqrt(x*x+y*y+z*z); return [x/l,y/l,z/l]; });
+
+  const EDGES = [
+    [0,1],[0,5],[0,7],[0,10],[0,11],
+    [1,5],[1,7],[1,8],[1,9],
+    [2,3],[2,6],[2,10],[2,11],[2,4],
+    [3,4],[3,6],[3,8],[3,9],
+    [4,5],[4,9],[4,11],
+    [5,9],[5,11],
+    [6,7],[6,8],[6,10],
+    [7,8],[7,10],
+    [8,9],[10,11]
+  ];
+
+  const FACES = [
+    [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],
+    [1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],
+    [3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],
+    [4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]
+  ];
+
+  /* particle cloud inside the shape */
+  const PARTICLES = Array.from({length:120},()=>({
+    x:(Math.random()-0.5)*2, y:(Math.random()-0.5)*2, z:(Math.random()-0.5)*2,
+    size:0.5+Math.random()*1.0, alpha:0.15+Math.random()*0.45,
+    speed:{ x:(Math.random()-0.5)*0.004, y:(Math.random()-0.5)*0.004, z:(Math.random()-0.5)*0.004 }
+  }));
+
+  function rotateY(v, a) {
+    return [ v[0]*Math.cos(a)+v[2]*Math.sin(a), v[1], -v[0]*Math.sin(a)+v[2]*Math.cos(a) ];
+  }
+  function rotateX(v, a) {
+    return [ v[0], v[1]*Math.cos(a)-v[2]*Math.sin(a), v[1]*Math.sin(a)+v[2]*Math.cos(a) ];
+  }
+  function project3D(v, scale, cx, cy) {
+    const fov = 3.5;
+    const z = v[2] + fov;
+    const s = scale * fov / z;
+    return { sx: cx + v[0]*s, sy: cy - v[1]*s, sz: v[2] };
+  }
+
+  function draw(t) {
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2, cy=H/2;
+    const scale = Math.min(W,H)*0.30;
+
+    const ry = t * 0.35;
+    const rx = t * 0.18 + 0.4;
+
+    /* transform all verts */
+    const verts2D = RAW_VERTS.map(v => {
+      let r = rotateY(v, ry);
+      r = rotateX(r, rx);
+      return project3D(r, scale, cx, cy);
+    });
+
+    /* sort faces back→front */
+    const facesDepth = FACES.map(f => {
+      const avgZ = (verts2D[f[0]].sz + verts2D[f[1]].sz + verts2D[f[2]].sz) / 3;
+      return { f, avgZ };
+    }).sort((a,b)=>a.avgZ-b.avgZ);
+
+    /* draw faces (very subtle fill) */
+    facesDepth.forEach(({ f, avgZ }) => {
+      const d = Math.max(0, Math.min(1, (avgZ+1.2)/2.4));
+      const a = verts2D[f[0]], b = verts2D[f[1]], c = verts2D[f[2]];
+      ctx.beginPath();
+      ctx.moveTo(a.sx,a.sy); ctx.lineTo(b.sx,b.sy); ctx.lineTo(c.sx,c.sy);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(255,255,255,${d*0.04})`;
+      ctx.fill();
+    });
+
+    /* glow aura around the shape */
+    const aura = ctx.createRadialGradient(cx,cy,scale*0.3,cx,cy,scale*1.0);
+    aura.addColorStop(0,'rgba(255,255,255,0.06)');
+    aura.addColorStop(1,'rgba(255,255,255,0.00)');
+    ctx.beginPath(); ctx.arc(cx,cy,scale,0,Math.PI*2);
+    ctx.fillStyle=aura; ctx.fill();
+
+    /* draw edges with depth-based brightness */
+    EDGES.forEach(([ai,bi]) => {
+      const a=verts2D[ai], b=verts2D[bi];
+      const avgZ=(a.sz+b.sz)/2;
+      const d=Math.max(0,Math.min(1,(avgZ+1.2)/2.4));
+      ctx.beginPath(); ctx.moveTo(a.sx,a.sy); ctx.lineTo(b.sx,b.sy);
+      ctx.strokeStyle=`rgba(255,255,255,${0.12+d*0.70})`;
+      ctx.lineWidth=0.8+d*0.6; ctx.stroke();
+    });
+
+    /* vertex node glows */
+    verts2D.forEach(v => {
+      const d=Math.max(0,Math.min(1,(v.sz+1.2)/2.4));
+      const g=ctx.createRadialGradient(v.sx,v.sy,0,v.sx,v.sy,4+d*4);
+      g.addColorStop(0,`rgba(255,255,255,${0.3+d*0.5})`);
+      g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(v.sx,v.sy,4+d*4,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+    });
+
+    /* inner particle cloud */
+    PARTICLES.forEach(p => {
+      p.x+=p.speed.x; p.y+=p.speed.y; p.z+=p.speed.z;
+      if(Math.abs(p.x)>1)p.speed.x*=-1;
+      if(Math.abs(p.y)>1)p.speed.y*=-1;
+      if(Math.abs(p.z)>1)p.speed.z*=-1;
+      let rv=rotateY([p.x,p.y,p.z],ry);
+      rv=rotateX(rv,rx);
+      const pp=project3D(rv,scale*0.9,cx,cy);
+      ctx.beginPath(); ctx.arc(pp.sx,pp.sy,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${p.alpha})`; ctx.fill();
+    });
+  }
+
+  let t0=null;
+  function frame(now){ if(!t0)t0=now; draw((now-t0)/1000); requestAnimationFrame(frame); }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════
+     BRIDGE — particle stream between cards
+═══════════════════════════════════════ -->
+<script>
+(function () {
+  const canvas = document.getElementById('bridgeCanvas');
+  const ctx = canvas.getContext('2d');
+  const grid = document.getElementById('methodologyGrid');
+
+  let W, H;
+  function resize() {
+    const rect = grid.getBoundingClientRect();
+    W = canvas.width  = grid.offsetWidth;
+    H = canvas.height = grid.offsetHeight;
+  }
+  resize();
+  new ResizeObserver(resize).observe(grid);
+
+  /* Stream particles that flow from card1→card2 and card2→card3 */
+  const N = 120;
+
+  function makeStream(xFrac0, xFrac1, yFrac, waveSign) {
+    return Array.from({length:N},(_,i)=>({
+      t: i/N,              /* phase offset so they're spread along the path */
+      speed: 0.04 + Math.random()*0.06,
+      size:  0.6 + Math.random()*1.2,
+      alpha: 0.15 + Math.random()*0.35,
+      xFrac0, xFrac1, yFrac,
+      waveSign,
+      waveFreq: 2 + Math.random()*2,
+      waveAmp:  0.012 + Math.random()*0.02,
+    }));
+  }
+
+  /* bridge 1: right edge of card1 → left edge of card2 (roughly x: 0.33→0.38 in grid) */
+  const stream1 = makeStream(0.33, 0.40, 0.28, 1);
+  /* bridge 2: right edge of card2 → left edge of card3 */
+  const stream2 = makeStream(0.63, 0.70, 0.28, -1);
+
+  function drawStream(stream, t) {
+    stream.forEach(p => {
+      p.t = (p.t + p.speed * 0.016) % 1;
+      const frac = p.t;
+      const x = W * (p.xFrac0 + (p.xFrac1 - p.xFrac0) * frac);
+      const baseY = H * p.yFrac;
+      const wave = Math.sin(frac * Math.PI * p.waveFreq + t * 2) * H * p.waveAmp * p.waveSign;
+      const y = baseY + wave;
+
+      /* fade in/out at edges */
+      const edgeFade = Math.sin(frac * Math.PI);
+      const a = p.alpha * edgeFade;
+
+      const g = ctx.createRadialGradient(x,y,0,x,y,p.size*2.5);
+      g.addColorStop(0, `rgba(255,255,255,${a})`);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath(); ctx.arc(x,y,p.size*2.5,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+    });
+  }
+
+  /* soft glow lines for the stream channels */
+  function drawStreamLine(x0, x1, yFrac, waveSign, t) {
+    const y0 = H * yFrac;
+    ctx.beginPath();
+    for (let i = 0; i <= 80; i++) {
+      const frac = i/80;
+      const x = W * (x0 + (x1-x0)*frac);
+      const wave = Math.sin(frac*Math.PI*3 + t*1.5)*H*0.018*waveSign;
+      i===0 ? ctx.moveTo(x, y0+wave) : ctx.lineTo(x, y0+wave);
+    }
+    ctx.strokeStyle='rgba(255,255,255,0.04)';
+    ctx.lineWidth=8;
+    ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,0.06)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+  }
+
+  let t0=null;
   function frame(now) {
-    if (!t0) t0 = now;
-    draw((now - t0) / 1000);
+    if(!t0) t0=now;
+    const t=(now-t0)/1000;
+    ctx.clearRect(0,0,W,H);
+
+    drawStreamLine(0.33,0.40,0.28, 1, t);
+    drawStreamLine(0.63,0.70,0.28,-1, t);
+    drawStream(stream1, t);
+    drawStream(stream2, t);
+
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
