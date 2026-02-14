@@ -9,7 +9,7 @@ function renderNav(activePage) {
     { id: 'research', label: 'research', href: '/research' },
     // { id: 'story', label: 'our story', href: '/story' },
     { id: 'team', label: 'team', href: '/team' },
-    { id: 'join', label: 'join us', href: '/join' },
+    { id: 'join', label: 'Join ANRL', href: '/join' },
   ];
 
   const links = pages
@@ -96,19 +96,19 @@ function renderFooter() {
           <div class="footer__copy">© ${new Date().getFullYear()} ANReLa. Open science, open source, open minds.</div>
         </div>
         <div class="footer__links">
-          <a href="https://github.com" target="_blank" rel="noopener" class="footer__link">
+          <a href="https://github.com/BGSTA9" target="_blank" rel="noopener" class="footer__link">
             GitHub
             <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
           </a>
-          <a href="https://huggingface.co" target="_blank" rel="noopener" class="footer__link">
+          <a href="https://huggingface.co/argo-navis-research-laboratory" target="_blank" rel="noopener" class="footer__link">
             Hugging Face
             <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
           </a>
-          <a href="https://linkedin.com" target="_blank" rel="noopener" class="footer__link">
+          <a href="https://www.linkedin.com/in/soheil-s-495a62320/" target="_blank" rel="noopener" class="footer__link">
             LinkedIn
             <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
           </a>
-          <a href="https://instagram.com" target="_blank" rel="noopener" class="footer__link">
+          <a href="https://instagram.com/orcanopus" target="_blank" rel="noopener" class="footer__link">
             Instagram
             <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
           </a>
@@ -120,14 +120,21 @@ function renderFooter() {
   document.body.appendChild(footer);
 }
 
-/* ── GoatCounter Analytics (private, cookie-free) ── */
+/* ── Google Analytics (private dashboard at analytics.google.com) ── */
 function renderAnalytics() {
-  // Replace 'anrl' with your GoatCounter site code after signing up at https://www.goatcounter.com
-  if (document.getElementById('goatcounter-script')) return;
+  // Replace 'G-XXXXXXXXXX' with your GA4 Measurement ID from https://analytics.google.com
+  if (document.getElementById('ga-script')) return;
+  const GA_ID = 'G-XXXXXXXXXX';
   const script = document.createElement('script');
-  script.id = 'goatcounter-script';
-  script.dataset.goatcounter = 'https://anrl.goatcounter.com/count';
+  script.id = 'ga-script';
   script.async = true;
-  script.src = '//gc.zgo.at/count.js';
-  document.body.appendChild(script);
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+  document.head.appendChild(script);
+  script.onload = function () {
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+  };
 }
