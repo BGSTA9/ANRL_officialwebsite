@@ -93,7 +93,7 @@ function renderFooter() {
       <div class="footer__inner">
         <div class="footer__left">
           <div class="footer__name">Argo Navis Research Laboratory</div>
-          <div class="footer__copy">© ${new Date().getFullYear()} ANReLa. Open science, open source, open minds.</div>
+          <div class="footer__copy">© ${new Date().getFullYear()} ANRL. Open science, open source, open minds.</div>
         </div>
         <div class="footer__links">
           <a href="https://github.com/BGSTA9" target="_blank" rel="noopener" class="footer__link">
@@ -122,9 +122,8 @@ function renderFooter() {
 
 /* ── Google Analytics (private dashboard at analytics.google.com) ── */
 function renderAnalytics() {
-  // Replace 'G-XXXXXXXXXX' with your GA4 Measurement ID from https://analytics.google.com
   if (document.getElementById('ga-script')) return;
-  const GA_ID = 'G-XXXXXXXXXX';
+  const GA_ID = 'G-8EVBERXBL0';
   const script = document.createElement('script');
   script.id = 'ga-script';
   script.async = true;
