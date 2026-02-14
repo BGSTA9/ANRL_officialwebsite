@@ -1,0 +1,22 @@
+# Netlify configuration for ANRL website
+
+# Pretty URLs: redirect .html to clean paths (301 permanent)
+[[redirects]]
+  from = "/research.html"
+  to = "/research"
+  status = 301
+
+[[redirects]]
+  from = "/team.html"
+  to = "/team"
+  status = 301
+
+[[redirects]]
+  from = "/story.html"
+  to = "/story"
+  status = 301
+
+[[redirects]]
+  from = "/join.html"
+  to = "/join"
+  status = 301

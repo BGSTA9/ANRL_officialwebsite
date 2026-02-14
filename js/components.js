@@ -5,11 +5,11 @@
 
 function renderNav(activePage) {
   const pages = [
-    { id: 'home', label: 'home', href: 'index.html' },
-    { id: 'research', label: 'research', href: 'research.html' },
-    { id: 'story', label: 'our story', href: 'story.html' },
-    { id: 'team', label: 'team', href: 'team.html' },
-    { id: 'join', label: 'join us', href: 'join.html' },
+    { id: 'home', label: 'home', href: '/' },
+    { id: 'research', label: 'research', href: '/research' },
+    // { id: 'story', label: 'our story', href: '/story' },
+    { id: 'team', label: 'team', href: '/team' },
+    { id: 'join', label: 'join us', href: '/join' },
   ];
 
   const links = pages
@@ -27,7 +27,7 @@ function renderNav(activePage) {
 
   nav.innerHTML = `
     <div class="nav__inner">
-      <a href="index.html" class="nav__logo">
+      <a href="/" class="nav__logo">
         <img src="assets/ANReLa.svg" alt="ANReLa" />
         <span class="nav__logo-text">Argo Navis Research Laboratory</span>
       </a>
@@ -84,7 +84,7 @@ function renderFooter() {
   // Check if pathname contains 'join.html' OR if the active nav item passed to renderNav was 'join'
   // But renderNav is separate. Let's rely on the URL or allow an override.
   // Simple check:
-  if (!window.location.href.includes('join.html')) return;
+  if (!window.location.pathname.includes('/join')) return;
 
   const footer = document.createElement('footer');
   footer.className = 'footer';
@@ -118,4 +118,16 @@ function renderFooter() {
   `;
 
   document.body.appendChild(footer);
+}
+
+/* ── GoatCounter Analytics (private, cookie-free) ── */
+function renderAnalytics() {
+  // Replace 'anrl' with your GoatCounter site code after signing up at https://www.goatcounter.com
+  if (document.getElementById('goatcounter-script')) return;
+  const script = document.createElement('script');
+  script.id = 'goatcounter-script';
+  script.dataset.goatcounter = 'https://anrl.goatcounter.com/count';
+  script.async = true;
+  script.src = '//gc.zgo.at/count.js';
+  document.body.appendChild(script);
 }

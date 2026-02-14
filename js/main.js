@@ -370,7 +370,7 @@ function initContactForm(form) {
             formData.append('email', email);
             formData.append('message', message);
 
-            const response = await fetch('/join.html', {
+            const response = await fetch('/join', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString()
@@ -386,7 +386,7 @@ function initContactForm(form) {
         } catch (err) {
             submitBtn.textContent = 'Send Message';
             submitBtn.disabled = false;
-            alert('Something went wrong. Please email us directly at contact@argonavis-research.org');
+            alert('Something went wrong. Please email us directly at soheilsanati@argonavis-research.org');
         }
     });
 }
